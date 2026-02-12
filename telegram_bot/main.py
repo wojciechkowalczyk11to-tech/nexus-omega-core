@@ -17,6 +17,12 @@ from telegram_bot.handlers.document_handler import document_handler
 from telegram_bot.handlers.help_handler import help_command
 from telegram_bot.handlers.mode_handler import mode_command
 from telegram_bot.handlers.start_handler import start_command
+from telegram_bot.handlers.subscribe_handler import (
+    buy_command,
+    precheckout_callback,
+    subscribe_command,
+    successful_payment_callback,
+)
 from telegram_bot.handlers.unlock_handler import unlock_command
 
 # Configure logging
@@ -42,6 +48,15 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("mode", mode_command))
     application.add_handler(CommandHandler("unlock", unlock_command))
+    application.add_handler(CommandHandler("subscribe", subscribe_command))
+    application.add_handler(CommandHandler("buy", buy_command))
+
+    # Register payment handlers
+    from telegram.ext import PreCheckoutQueryHandler
+    application.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+    application.add_handler(
+        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
+    )
 
     # Register message handlers
     application.add_handler(
