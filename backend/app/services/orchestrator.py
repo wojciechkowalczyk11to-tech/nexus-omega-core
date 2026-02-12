@@ -105,12 +105,20 @@ class Orchestrator:
             mode=request.mode_override or request.user.default_mode,
         )
 
-        # Step 3: Build context (placeholder - will be implemented in Phase 3)
+        # Step 3: Build context
         logger.info("Step 3: Build context")
-        context_messages = await self.memory_manager.get_context_messages(session.id)
-
-        # Add user query
-        context_messages.append({"role": "user", "content": request.query})
+        
+        from app.services.context_builder import ContextBuilder
+        
+        context_builder = ContextBuilder(self.db)
+        context_messages, sources = await context_builder.build_context(
+            user_id=request.user.telegram_id,
+            session_id=session.id,
+            query=request.query,
+            use_vertex=True,
+            use_rag=True,
+            use_web=False,  # Web search disabled by default (costs credits)
+        )
 
         # Step 4: Classify difficulty
         logger.info("Step 4: Classify difficulty")
@@ -238,4 +246,5 @@ class Orchestrator:
             fallback_used=fallback_used,
             needs_confirmation=False,
             session_id=session.id,
+            sources=sources,
         )
