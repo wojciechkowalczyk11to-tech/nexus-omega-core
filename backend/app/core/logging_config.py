@@ -9,7 +9,7 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any
 
-from backend.app.core.config import settings
+from app.core.config import settings
 
 # Context variables for request tracking
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)

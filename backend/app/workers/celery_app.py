@@ -5,7 +5,7 @@ Will be fully implemented in Phase 6.
 
 from celery import Celery
 
-from backend.app.core.config import settings
+from app.core.config import settings
 
 celery_app = Celery(
     "nexus_omega_core",

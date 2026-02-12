@@ -9,8 +9,8 @@ from typing import Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from backend.app.core.config import settings
-from backend.app.core.exceptions import AuthenticationError
+from app.core.config import settings
+from app.core.exceptions import AuthenticationError
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -8,11 +8,11 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.api.deps import close_redis_pool, get_redis_pool
-from backend.app.api.v1.router import api_router
-from backend.app.core.config import settings
-from backend.app.core.logging_config import get_logger, setup_logging
-from backend.app.db.session import close_db, init_db
+from app.api.deps import close_redis_pool, get_redis_pool
+from app.api.v1.router import api_router
+from app.core.config import settings
+from app.core.logging_config import get_logger, setup_logging
+from app.db.session import close_db, init_db
 
 # Setup logging
 setup_logging()

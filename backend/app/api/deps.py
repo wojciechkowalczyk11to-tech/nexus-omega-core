@@ -9,12 +9,12 @@ import redis.asyncio as aioredis
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.config import settings
-from backend.app.core.exceptions import AuthenticationError, UserNotFoundError
-from backend.app.core.security import verify_access_token
-from backend.app.db.models.user import User
-from backend.app.db.session import AsyncSessionLocal
-from backend.app.services.user_service import UserService
+from app.core.config import settings
+from app.core.exceptions import AuthenticationError, UserNotFoundError
+from app.core.security import verify_access_token
+from app.db.models.user import User
+from app.db.session import AsyncSessionLocal
+from app.services.user_service import UserService
 
 # Redis connection pool
 _redis_pool: aioredis.Redis | None = None

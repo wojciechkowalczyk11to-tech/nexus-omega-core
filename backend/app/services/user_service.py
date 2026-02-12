@@ -5,8 +5,8 @@ User service for CRUD operations on User model.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.exceptions import UserNotFoundError
-from backend.app.db.models.user import User
+from app.core.exceptions import UserNotFoundError
+from app.db.models.user import User
 
 
 class UserService:
