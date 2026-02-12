@@ -1,0 +1,75 @@
+"""
+/mode command handler.
+"""
+
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from telegram_bot.services.user_cache import UserCache
+
+
+async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Handle /mode command.
+
+    Allows user to change AI mode (eco, smart, deep).
+    """
+    user = update.effective_user
+    cache = UserCache()
+
+    try:
+        # Get current mode
+        current_mode = await cache.get_user_mode(user.id) or "eco"
+
+        # Check if mode argument provided
+        if context.args and len(context.args) > 0:
+            new_mode = context.args[0].lower()
+
+            if new_mode not in ("eco", "smart", "deep"):
+                await update.message.reply_text(
+                    "⚠️ Nieprawidłowy tryb. Dostępne: eco, smart, deep"
+                )
+                return
+
+            # Set new mode
+            await cache.set_user_mode(user.id, new_mode)
+
+            mode_descriptions = {
+                "eco": "🌱 **ECO** - Szybki i darmowy (Gemini Flash, Groq)",
+                "smart": "🧠 **SMART** - Zbalansowany (DeepSeek Reasoner)",
+                "deep": "🔬 **DEEP** - Zaawansowany (GPT-4, Claude) - wymaga FULL_ACCESS",
+            }
+
+            await update.message.reply_text(
+                f"✅ Zmieniono tryb na: {mode_descriptions[new_mode]}",
+                parse_mode="Markdown",
+            )
+
+        else:
+            # Show current mode and options
+            mode_info = f"""🎛 **Aktualny tryb:** {current_mode.upper()}
+
+**Dostępne tryby:**
+
+🌱 **ECO** - Szybki i darmowy
+   Providery: Gemini Flash, Groq, DeepSeek Chat
+   Koszt: ~$0
+   Użyj: `/mode eco`
+
+🧠 **SMART** - Zbalansowany
+   Providery: DeepSeek Reasoner, Gemini Thinking
+   Koszt: ~$0.001-0.01 / zapytanie
+   Użyj: `/mode smart`
+
+🔬 **DEEP** - Zaawansowany (wymaga FULL_ACCESS)
+   Providery: DeepSeek, GPT-4o, Claude Sonnet
+   Koszt: ~$0.01-0.10 / zapytanie
+   Użyj: `/mode deep`
+
+💡 **Wskazówka:** Bot automatycznie wybiera tryb na podstawie trudności zapytania.
+"""
+
+            await update.message.reply_text(mode_info, parse_mode="Markdown")
+
+    finally:
+        await cache.close()
