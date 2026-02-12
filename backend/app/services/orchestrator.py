@@ -145,14 +145,24 @@ class Orchestrator:
 
         # Step 7: Generate with fallback chain
         logger.info("Step 7: Generate with fallback")
-        # Placeholder - will be implemented in Phase 2 with actual providers
-        response_content = f"[Phase 1 Placeholder] Query: {request.query}\nProfile: {profile.value}\nDifficulty: {difficulty.value}"
-        provider_used = "gemini"  # Placeholder
-        model_used = "gemini-flash"  # Placeholder
-        input_tokens = len(request.query.split()) * 2  # Rough estimate
-        output_tokens = 100  # Placeholder
-        cost_usd = 0.0001  # Placeholder
-        fallback_used = False
+        
+        # Import provider factory
+        from app.providers.factory import ProviderFactory
+        
+        # Generate with fallback
+        provider_response, provider_used, fallback_used = await ProviderFactory.generate_with_fallback(
+            provider_chain=policy_result.provider_chain,
+            messages=context_messages,
+            profile=profile.value,
+            temperature=0.7,
+            max_tokens=2048,
+        )
+        
+        response_content = provider_response.content
+        model_used = provider_response.model
+        input_tokens = provider_response.input_tokens
+        output_tokens = provider_response.output_tokens
+        cost_usd = provider_response.cost_usd
 
         # Step 8: Persist
         logger.info("Step 8: Persist messages and usage")
