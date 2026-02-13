@@ -173,3 +173,10 @@ class CacheError(AppException):
 
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(f"Błąd cache: {message}", details)
+
+
+class SandboxError(AppException):
+    """Raised when sandbox execution fails."""
+
+    def __init__(self, message: str = "Błąd wykonania sandbox", details: dict[str, Any] | None = None) -> None:
+        super().__init__(message, details)
