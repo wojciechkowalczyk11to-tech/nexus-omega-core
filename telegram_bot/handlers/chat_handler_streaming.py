@@ -58,8 +58,9 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
         last_update_time = asyncio.get_event_loop().time()
         update_interval = 1.0  # Update message every 1 second
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            async with client.stream(
+        async with (
+            httpx.AsyncClient(timeout=120.0) as client,
+            client.stream(
                 "POST",
                 f"{settings.backend_url}/api/v1/chat/stream",
                 headers={"Authorization": f"Bearer {token}"},
@@ -67,83 +68,86 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
                     "query": query,
                     "mode": mode,
                 },
-            ) as response:
-                response.raise_for_status()
+            ) as response,
+        ):
+            response.raise_for_status()
 
-                async for line in response.aiter_lines():
-                    if not line or not line.startswith("data: "):
-                        continue
+            async for line in response.aiter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
 
-                    data_str = line[6:]  # Remove "data: " prefix
+                data_str = line[6:]  # Remove "data: " prefix
 
-                    if data_str == "[DONE]":
-                        break
+                if data_str == "[DONE]":
+                    break
 
-                    try:
-                        data = json.loads(data_str)
-                        event_type = data.get("type")
+                try:
+                    data = json.loads(data_str)
+                    event_type = data.get("type")
 
-                        if event_type == "status":
-                            # Update status message
-                            await response_message.edit_text(f"⏳ {data['message']}")
+                    if event_type == "status":
+                        # Update status message
+                        await response_message.edit_text(f"⏳ {data['message']}")
 
-                        elif event_type == "content":
-                            # Accumulate content chunks
-                            accumulated_content += data["chunk"]
+                    elif event_type == "content":
+                        # Accumulate content chunks
+                        accumulated_content += data["chunk"]
 
-                            # Update message periodically to avoid rate limits
-                            current_time = asyncio.get_event_loop().time()
-                            if current_time - last_update_time >= update_interval:
-                                try:
-                                    # Truncate if too long (Telegram limit: 4096 chars)
-                                    display_content = accumulated_content
-                                    if len(display_content) > 3800:
-                                        display_content = display_content[:3800] + "\n\n... (kontynuacja)"
-
-                                    await response_message.edit_text(
-                                        display_content,
-                                        parse_mode="Markdown",
+                        # Update message periodically to avoid rate limits
+                        current_time = asyncio.get_event_loop().time()
+                        if current_time - last_update_time >= update_interval:
+                            try:
+                                # Truncate if too long (Telegram limit: 4096 chars)
+                                display_content = accumulated_content
+                                if len(display_content) > 3800:
+                                    display_content = (
+                                        display_content[:3800] + "\n\n... (kontynuacja)"
                                     )
-                                    last_update_time = current_time
-                                except Exception as e:
-                                    # Ignore edit errors (message unchanged, rate limit, etc.)
-                                    pass
 
-                        elif event_type == "confirmation_needed":
+                                await response_message.edit_text(
+                                    display_content,
+                                    parse_mode="Markdown",
+                                )
+                                last_update_time = current_time
+                            except Exception:
+                                # Ignore edit errors (message unchanged, rate limit, etc.)
+                                pass
+
+                    elif event_type == "confirmation_needed":
+                        await response_message.edit_text(
+                            "⚠️ **Tryb DEEP** wymaga potwierdzenia (wyższy koszt).\n\n"
+                            "Użyj /deep_confirm aby potwierdzić, lub /mode eco aby zmienić tryb.",
+                            parse_mode="Markdown",
+                        )
+                        # Store query in context for confirmation
+                        context.user_data["pending_query"] = query
+                        return
+
+                    elif event_type == "metadata":
+                        # Store metadata footer
+                        meta_footer = data["footer"]
+
+                    elif event_type == "error":
+                        error_code = data.get("code", 500)
+                        error_message = data["message"]
+
+                        if error_code == 403:
                             await response_message.edit_text(
-                                "⚠️ **Tryb DEEP** wymaga potwierdzenia (wyższy koszt).\n\n"
-                                "Użyj /deep_confirm aby potwierdzić, lub /mode eco aby zmienić tryb.",
-                                parse_mode="Markdown",
+                                "⛔ Brak dostępu. Sprawdź swoją rolę: /help"
                             )
-                            # Store query in context for confirmation
-                            context.user_data["pending_query"] = query
-                            return
+                        elif error_code == 503:
+                            await response_message.edit_text(
+                                "❌ Wszystkie providery AI są niedostępne. Spróbuj ponownie za chwilę."
+                            )
+                        else:
+                            await response_message.edit_text(
+                                f"❌ Błąd: {error_message}\n\nSpróbuj ponownie lub użyj /help"
+                            )
+                        return
 
-                        elif event_type == "metadata":
-                            # Store metadata footer
-                            meta_footer = data["footer"]
-
-                        elif event_type == "error":
-                            error_code = data.get("code", 500)
-                            error_message = data["message"]
-
-                            if error_code == 403:
-                                await response_message.edit_text(
-                                    "⛔ Brak dostępu. Sprawdź swoją rolę: /help"
-                                )
-                            elif error_code == 503:
-                                await response_message.edit_text(
-                                    "❌ Wszystkie providery AI są niedostępne. Spróbuj ponownie za chwilę."
-                                )
-                            else:
-                                await response_message.edit_text(
-                                    f"❌ Błąd: {error_message}\n\nSpróbuj ponownie lub użyj /help"
-                                )
-                            return
-
-                    except json.JSONDecodeError:
-                        # Skip malformed JSON
-                        continue
+                except json.JSONDecodeError:
+                    # Skip malformed JSON
+                    continue
 
         # Final update with complete content and metadata
         if accumulated_content:
@@ -158,9 +162,7 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
     except httpx.HTTPStatusError as e:
         error_message = f"HTTP {e.response.status_code}"
         if e.response.status_code == 403:
-            await update.message.reply_text(
-                "⛔ Brak dostępu. Sprawdź swoją rolę: /help"
-            )
+            await update.message.reply_text("⛔ Brak dostępu. Sprawdź swoją rolę: /help")
         elif e.response.status_code == 503:
             await update.message.reply_text(
                 "❌ Wszystkie providery AI są niedostępne. Spróbuj ponownie za chwilę."
@@ -171,9 +173,7 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
             )
 
     except Exception as e:
-        await update.message.reply_text(
-            f"❌ Błąd: {str(e)}\n\nSpróbuj ponownie lub użyj /help"
-        )
+        await update.message.reply_text(f"❌ Błąd: {str(e)}\n\nSpróbuj ponownie lub użyj /help")
 
     finally:
         await cache.close()

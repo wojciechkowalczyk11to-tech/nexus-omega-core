@@ -25,6 +25,7 @@ from typing import Any
 
 class DifficultyLevel(str, Enum):
     """Difficulty levels for query classification."""
+
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
@@ -32,6 +33,7 @@ class DifficultyLevel(str, Enum):
 
 class Profile(str, Enum):
     """AI profile types."""
+
     ECO = "eco"
     SMART = "smart"
     DEEP = "deep"
@@ -39,21 +41,23 @@ class Profile(str, Enum):
 
 class QueryIntent(str, Enum):
     """Detected intent of the user query."""
-    FACTUAL = "factual"           # Simple fact lookup
-    ANALYTICAL = "analytical"     # Analysis, comparison, reasoning
-    CREATIVE = "creative"         # Creative writing, brainstorming
-    CODE = "code"                 # Programming, debugging
-    MATH = "math"                 # Calculations, math problems
-    SEARCH = "search"             # Web/knowledge search needed
-    DOCUMENT = "document"         # Document-related query
-    MEMORY = "memory"             # User preference/memory related
-    TEMPORAL = "temporal"         # Time/date related
+
+    FACTUAL = "factual"  # Simple fact lookup
+    ANALYTICAL = "analytical"  # Analysis, comparison, reasoning
+    CREATIVE = "creative"  # Creative writing, brainstorming
+    CODE = "code"  # Programming, debugging
+    MATH = "math"  # Calculations, math problems
+    SEARCH = "search"  # Web/knowledge search needed
+    DOCUMENT = "document"  # Document-related query
+    MEMORY = "memory"  # User preference/memory related
+    TEMPORAL = "temporal"  # Time/date related
     CONVERSATIONAL = "conversational"  # Casual chat, greetings
 
 
 @dataclass
 class CostEstimate:
     """Cost estimation for a profile."""
+
     profile: str
     estimated_input_tokens: int
     estimated_output_tokens: int
@@ -64,6 +68,7 @@ class CostEstimate:
 @dataclass
 class ToolRecommendation:
     """Recommendation for which tools to use."""
+
     tool_name: str
     relevance_score: float  # 0.0 - 1.0
     reason: str
@@ -72,6 +77,7 @@ class ToolRecommendation:
 @dataclass
 class QueryAnalysis:
     """Complete analysis of a user query."""
+
     difficulty: DifficultyLevel
     intents: list[QueryIntent]
     recommended_tools: list[ToolRecommendation]
@@ -88,32 +94,76 @@ class ModelRouter:
 
     # Hard difficulty indicators
     HARD_KEYWORDS_PL = [
-        "wyjaśnij szczegółowo", "przeanalizuj", "porównaj", "zaprojektuj",
-        "zoptymalizuj", "debuguj", "refaktoryzuj", "architektura",
-        "algorytm", "złożoność", "zaimplementuj", "strategia",
-        "oceń", "zaproponuj rozwiązanie", "rozwiąż problem",
-        "wieloetapowy", "krok po kroku",
+        "wyjaśnij szczegółowo",
+        "przeanalizuj",
+        "porównaj",
+        "zaprojektuj",
+        "zoptymalizuj",
+        "debuguj",
+        "refaktoryzuj",
+        "architektura",
+        "algorytm",
+        "złożoność",
+        "zaimplementuj",
+        "strategia",
+        "oceń",
+        "zaproponuj rozwiązanie",
+        "rozwiąż problem",
+        "wieloetapowy",
+        "krok po kroku",
     ]
 
     HARD_KEYWORDS_EN = [
-        "explain in detail", "analyze", "compare", "design",
-        "optimize", "debug", "refactor", "architecture",
-        "algorithm", "complexity", "implement", "strategy",
-        "evaluate", "propose solution", "solve problem",
-        "multi-step", "step by step",
+        "explain in detail",
+        "analyze",
+        "compare",
+        "design",
+        "optimize",
+        "debug",
+        "refactor",
+        "architecture",
+        "algorithm",
+        "complexity",
+        "implement",
+        "strategy",
+        "evaluate",
+        "propose solution",
+        "solve problem",
+        "multi-step",
+        "step by step",
     ]
 
     # Medium difficulty indicators
     MEDIUM_KEYWORDS_PL = [
-        "jak", "dlaczego", "co to jest", "różnica", "przykład",
-        "pokaż", "napisz", "stwórz", "opisz", "wymień",
-        "podaj", "wytłumacz", "pomóż",
+        "jak",
+        "dlaczego",
+        "co to jest",
+        "różnica",
+        "przykład",
+        "pokaż",
+        "napisz",
+        "stwórz",
+        "opisz",
+        "wymień",
+        "podaj",
+        "wytłumacz",
+        "pomóż",
     ]
 
     MEDIUM_KEYWORDS_EN = [
-        "how", "why", "what is", "difference", "example",
-        "show", "write", "create", "describe", "list",
-        "give me", "explain", "help",
+        "how",
+        "why",
+        "what is",
+        "difference",
+        "example",
+        "show",
+        "write",
+        "create",
+        "describe",
+        "list",
+        "give me",
+        "explain",
+        "help",
     ]
 
     # Intent detection patterns
@@ -166,8 +216,8 @@ class ModelRouter:
 
     # Token-based smart credits calculation
     SMART_CREDIT_TIERS = [
-        (500, 1),    # ≤500 tokens = 1 credit
-        (2000, 2),   # ≤2000 tokens = 2 credits
+        (500, 1),  # ≤500 tokens = 1 credit
+        (2000, 2),  # ≤2000 tokens = 2 credits
         (float("inf"), 4),  # >2000 tokens = 4 credits
     ]
 
@@ -207,15 +257,17 @@ class ModelRouter:
 
         # --- Signal 1: Keyword difficulty scoring ---
         hard_score = self._keyword_score(query_lower, self.HARD_KEYWORDS_PL + self.HARD_KEYWORDS_EN)
-        medium_score = self._keyword_score(query_lower, self.MEDIUM_KEYWORDS_PL + self.MEDIUM_KEYWORDS_EN)
+        medium_score = self._keyword_score(
+            query_lower, self.MEDIUM_KEYWORDS_PL + self.MEDIUM_KEYWORDS_EN
+        )
         signals["hard_keyword_score"] = hard_score
         signals["medium_keyword_score"] = medium_score
 
         # --- Signal 2: Structural complexity ---
         word_count = len(query.split())
-        sentence_count = max(1, len(re.split(r'[.!?]+', query)))
+        sentence_count = max(1, len(re.split(r"[.!?]+", query)))
         has_code_block = "```" in query
-        has_list = bool(re.search(r'^\s*[-*\d]+[.)]\s', query, re.MULTILINE))
+        has_list = bool(re.search(r"^\s*[-*\d]+[.)]\s", query, re.MULTILINE))
 
         structural_complexity = 0.0
         if word_count > 100:
@@ -243,10 +295,14 @@ class ModelRouter:
 
         # --- Signal 4: Combined difficulty score ---
         difficulty_score = (
-            hard_score * 0.4 +
-            structural_complexity * 0.3 +
-            (0.3 if any(i in (QueryIntent.ANALYTICAL, QueryIntent.CODE) for i in intents) else 0.0) +
-            medium_score * 0.15
+            hard_score * 0.4
+            + structural_complexity * 0.3
+            + (
+                0.3
+                if any(i in (QueryIntent.ANALYTICAL, QueryIntent.CODE) for i in intents)
+                else 0.0
+            )
+            + medium_score * 0.15
         )
 
         # Reduce difficulty for conversational/simple queries
@@ -416,9 +472,7 @@ class ModelRouter:
         Returns:
             True if confirmation needed
         """
-        if profile == Profile.DEEP and user_role == "FULL_ACCESS":
-            return True
-        return False
+        return bool(profile == Profile.DEEP and user_role == "FULL_ACCESS")
 
     # =========================================================================
     # Private methods
@@ -431,6 +485,7 @@ class ModelRouter:
             return 0.0
         # Logarithmic scaling: 1 match = 0.3, 2 = 0.5, 3+ = 0.7+
         import math
+
         return min(1.0, 0.3 + math.log(1 + matches) * 0.3)
 
     def _detect_intents(self, query_lower: str, query_original: str) -> list[QueryIntent]:
@@ -461,8 +516,21 @@ class ModelRouter:
         if not intents:
             # Check if it's a question
             if query_lower.endswith("?") or any(
-                query_lower.startswith(w) for w in ["co ", "kto ", "gdzie ", "kiedy ", "jak ", "dlaczego ",
-                                                     "what ", "who ", "where ", "when ", "how ", "why "]
+                query_lower.startswith(w)
+                for w in [
+                    "co ",
+                    "kto ",
+                    "gdzie ",
+                    "kiedy ",
+                    "jak ",
+                    "dlaczego ",
+                    "what ",
+                    "who ",
+                    "where ",
+                    "when ",
+                    "how ",
+                    "why ",
+                ]
             ):
                 intents.append(QueryIntent.FACTUAL)
             else:
@@ -485,63 +553,79 @@ class ModelRouter:
 
         # Web search — for search intent, current info, factual queries
         if QueryIntent.SEARCH in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="web_search",
-                relevance_score=0.9,
-                reason="Zapytanie wymaga aktualnych informacji z internetu.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="web_search",
+                    relevance_score=0.9,
+                    reason="Zapytanie wymaga aktualnych informacji z internetu.",
+                )
+            )
         elif QueryIntent.FACTUAL in intents:
             # Lower relevance — might be answerable from knowledge
-            recommendations.append(ToolRecommendation(
-                tool_name="web_search",
-                relevance_score=0.4,
-                reason="Zapytanie faktograficzne — wyszukiwanie może pomóc.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="web_search",
+                    relevance_score=0.4,
+                    reason="Zapytanie faktograficzne — wyszukiwanie może pomóc.",
+                )
+            )
 
         # Vertex search — for knowledge base queries
         if QueryIntent.SEARCH in intents or QueryIntent.FACTUAL in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="vertex_search",
-                relevance_score=0.5,
-                reason="Zapytanie może dotyczyć bazy wiedzy.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="vertex_search",
+                    relevance_score=0.5,
+                    reason="Zapytanie może dotyczyć bazy wiedzy.",
+                )
+            )
 
         # RAG search — for document-related queries
         if QueryIntent.DOCUMENT in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="rag_search",
-                relevance_score=0.85,
-                reason="Zapytanie dotyczy dokumentów użytkownika.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="rag_search",
+                    relevance_score=0.85,
+                    reason="Zapytanie dotyczy dokumentów użytkownika.",
+                )
+            )
 
         # Calculator — for math queries
         if QueryIntent.MATH in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="calculate",
-                relevance_score=0.8,
-                reason="Zapytanie wymaga obliczeń matematycznych.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="calculate",
+                    relevance_score=0.8,
+                    reason="Zapytanie wymaga obliczeń matematycznych.",
+                )
+            )
 
         # Memory — for memory-related queries
         if QueryIntent.MEMORY in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="memory_read",
-                relevance_score=0.7,
-                reason="Zapytanie dotyczy zapamiętanych preferencji.",
-            ))
-            recommendations.append(ToolRecommendation(
-                tool_name="memory_write",
-                relevance_score=0.6,
-                reason="Użytkownik może chcieć zapisać informację.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="memory_read",
+                    relevance_score=0.7,
+                    reason="Zapytanie dotyczy zapamiętanych preferencji.",
+                )
+            )
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="memory_write",
+                    relevance_score=0.6,
+                    reason="Użytkownik może chcieć zapisać informację.",
+                )
+            )
 
         # DateTime — for temporal queries
         if QueryIntent.TEMPORAL in intents:
-            recommendations.append(ToolRecommendation(
-                tool_name="get_datetime",
-                relevance_score=0.8,
-                reason="Zapytanie dotyczy aktualnej daty/czasu.",
-            ))
+            recommendations.append(
+                ToolRecommendation(
+                    tool_name="get_datetime",
+                    relevance_score=0.8,
+                    reason="Zapytanie dotyczy aktualnej daty/czasu.",
+                )
+            )
 
         # Sort by relevance (descending)
         recommendations.sort(key=lambda r: r.relevance_score, reverse=True)

@@ -51,9 +51,7 @@ class OpenRouterProvider(BaseProvider):
     ) -> ProviderResponse:
         """Generate completion using OpenRouter."""
         if not self.is_available():
-            raise ProviderError(
-                "OpenRouter API key not configured", {"provider": "openrouter"}
-            )
+            raise ProviderError("OpenRouter API key not configured", {"provider": "openrouter"})
 
         start_time = time.time()
 
@@ -94,15 +92,13 @@ class OpenRouterProvider(BaseProvider):
             raise ProviderError(
                 f"OpenRouter generation failed: {str(e)}",
                 {"provider": "openrouter", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get OpenRouter model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for OpenRouter request (always free for free tier)."""
         return 0.0
 

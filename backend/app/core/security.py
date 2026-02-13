@@ -3,7 +3,7 @@ Security utilities for JWT token creation/verification and password hashing.
 """
 
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -43,11 +43,11 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(hours=settings.jwt_expire_hours)
+        expire = datetime.now(UTC) + timedelta(hours=settings.jwt_expire_hours)
 
-    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+    to_encode.update({"exp": expire, "iat": datetime.now(UTC)})
 
     encoded_jwt = jwt.encode(
         to_encode,

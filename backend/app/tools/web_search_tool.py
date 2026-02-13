@@ -36,9 +36,7 @@ class WebSearchTool:
         """
         return self.api_key is not None and len(self.api_key) > 0
 
-    async def search(
-        self, query: str, max_results: int = 5
-    ) -> list[dict[str, Any]]:
+    async def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]:
         """
         Perform web search.
 
@@ -90,11 +88,11 @@ class WebSearchTool:
                 "web_search",
                 f"Web search failed: HTTP {e.response.status_code}",
                 {"query": query},
-            )
+            ) from e
         except Exception as e:
             logger.error(f"Web search error: {e}", exc_info=True)
             raise ToolExecutionError(
                 "web_search",
                 f"Web search failed: {str(e)}",
                 {"query": query},
-            )
+            ) from e

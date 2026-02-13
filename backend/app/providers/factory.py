@@ -2,8 +2,6 @@
 Provider factory and registry.
 """
 
-from typing import Type
-
 from app.core.config import settings
 from app.core.exceptions import ProviderError
 from app.core.logging_config import get_logger
@@ -23,7 +21,7 @@ class ProviderFactory:
     """Factory for creating AI provider instances."""
 
     # Provider registry
-    PROVIDERS: dict[str, Type[BaseProvider]] = {
+    PROVIDERS: dict[str, type[BaseProvider]] = {
         "gemini": GeminiProvider,
         "deepseek": DeepSeekProvider,
         "groq": GroqProvider,
@@ -134,7 +132,7 @@ class ProviderFactory:
         """
         available = []
 
-        for provider_name in cls.PROVIDERS.keys():
+        for provider_name in cls.PROVIDERS:
             try:
                 provider = cls.create(provider_name)
                 if provider.is_available():
@@ -176,7 +174,9 @@ class ProviderFactory:
 
         for i, provider_name in enumerate(provider_chain):
             try:
-                logger.info(f"Trying provider: {provider_name} (attempt {i+1}/{len(provider_chain)})")
+                logger.info(
+                    f"Trying provider: {provider_name} (attempt {i + 1}/{len(provider_chain)})"
+                )
 
                 # Create provider
                 provider = cls.create(provider_name)

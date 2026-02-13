@@ -52,20 +52,16 @@ async def unlock_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         if "401" in error_message or "Nieprawidłowy" in error_message:
             await update.message.reply_text(
-                "❌ **Nieprawidłowy kod odblokowania.**\n\n"
-                "Sprawdź kod i spróbuj ponownie.",
+                "❌ **Nieprawidłowy kod odblokowania.**\n\nSprawdź kod i spróbuj ponownie.",
                 parse_mode="Markdown",
             )
         elif "404" in error_message:
             await update.message.reply_text(
-                "❌ **Użytkownik nie istnieje.**\n\n"
-                "Najpierw użyj /start aby się zarejestrować.",
+                "❌ **Użytkownik nie istnieje.**\n\nNajpierw użyj /start aby się zarejestrować.",
                 parse_mode="Markdown",
             )
         else:
-            await update.message.reply_text(
-                f"❌ Błąd: {error_message}\n\nSpróbuj ponownie."
-            )
+            await update.message.reply_text(f"❌ Błąd: {error_message}\n\nSpróbuj ponownie.")
 
     finally:
         await backend.close()

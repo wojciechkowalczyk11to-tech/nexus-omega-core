@@ -143,17 +143,17 @@ Zasady:
         # 2. Add absolute user memory
         memories = await self.memory_manager.list_absolute_memories(user_id)
         if memories:
-            memory_text = "\n".join(
-                [f"- {mem.key}: {mem.value}" for mem in memories[:5]]
-            )
+            memory_text = "\n".join([f"- {mem.key}: {mem.value}" for mem in memories[:5]])
             system_prompt += f"\n\n**Preferencje użytkownika:**\n{memory_text}"
 
-        prioritized.append(PrioritizedMessage(
-            message={"role": "system", "content": system_prompt},
-            priority=MessagePriority.SYSTEM_PROMPT,
-            truncatable=False,
-            source="system_prompt",
-        ))
+        prioritized.append(
+            PrioritizedMessage(
+                message={"role": "system", "content": system_prompt},
+                priority=MessagePriority.SYSTEM_PROMPT,
+                truncatable=False,
+                source="system_prompt",
+            )
+        )
 
         # 3. Vertex AI Search
         if use_vertex and self.vertex_tool.is_available():
@@ -166,13 +166,15 @@ Zasady:
                     for i, result in enumerate(vertex_results, 1):
                         vertex_context += f"{i}. {result['title']}\n{result['snippet'][:200]}\n\n"
 
-                    prioritized.append(PrioritizedMessage(
-                        message={"role": "system", "content": vertex_context},
-                        priority=MessagePriority.VERTEX_RESULT,
-                        truncatable=True,
-                        min_tokens=80,
-                        source="vertex_search",
-                    ))
+                    prioritized.append(
+                        PrioritizedMessage(
+                            message={"role": "system", "content": vertex_context},
+                            priority=MessagePriority.VERTEX_RESULT,
+                            truncatable=True,
+                            min_tokens=80,
+                            source="vertex_search",
+                        )
+                    )
                     logger.info(f"Added {len(vertex_results)} Vertex results to context")
             except Exception as e:
                 logger.warning(f"Vertex search failed: {e}")
@@ -188,13 +190,15 @@ Zasady:
                     for i, result in enumerate(rag_results, 1):
                         rag_context += f"{i}. {result['filename']}\n{result['content'][:200]}\n\n"
 
-                    prioritized.append(PrioritizedMessage(
-                        message={"role": "system", "content": rag_context},
-                        priority=MessagePriority.RAG_RESULT,
-                        truncatable=True,
-                        min_tokens=80,
-                        source="rag_search",
-                    ))
+                    prioritized.append(
+                        PrioritizedMessage(
+                            message={"role": "system", "content": rag_context},
+                            priority=MessagePriority.RAG_RESULT,
+                            truncatable=True,
+                            min_tokens=80,
+                            source="rag_search",
+                        )
+                    )
                     logger.info(f"Added {len(rag_results)} RAG results to context")
             except Exception as e:
                 logger.warning(f"RAG search failed: {e}")
@@ -210,13 +214,15 @@ Zasady:
                     for i, result in enumerate(web_results, 1):
                         web_context += f"{i}. {result['title']}\n{result['snippet'][:200]}\n{result['url']}\n\n"
 
-                    prioritized.append(PrioritizedMessage(
-                        message={"role": "system", "content": web_context},
-                        priority=MessagePriority.WEB_RESULT,
-                        truncatable=True,
-                        min_tokens=80,
-                        source="web_search",
-                    ))
+                    prioritized.append(
+                        PrioritizedMessage(
+                            message={"role": "system", "content": web_context},
+                            priority=MessagePriority.WEB_RESULT,
+                            truncatable=True,
+                            min_tokens=80,
+                            source="web_search",
+                        )
+                    )
                     logger.info(f"Added {len(web_results)} web results to context")
             except Exception as e:
                 logger.warning(f"Web search failed: {e}")
@@ -228,34 +234,39 @@ Zasady:
             is_snapshot = "[Podsumowanie poprzedniej konwersacji]" in content
 
             if is_snapshot:
-                prioritized.append(PrioritizedMessage(
-                    message=msg,
-                    priority=MessagePriority.SNAPSHOT,
-                    truncatable=True,
-                    min_tokens=100,
-                    source="snapshot",
-                ))
+                prioritized.append(
+                    PrioritizedMessage(
+                        message=msg,
+                        priority=MessagePriority.SNAPSHOT,
+                        truncatable=True,
+                        min_tokens=100,
+                        source="snapshot",
+                    )
+                )
             else:
                 recency_boost = min(i * 2, 10)
-                prioritized.append(PrioritizedMessage(
-                    message=msg,
-                    priority=MessagePriority.HISTORY_OLD + recency_boost,
-                    truncatable=True,
-                    min_tokens=30,
-                    source=f"history_{i}",
-                ))
+                prioritized.append(
+                    PrioritizedMessage(
+                        message=msg,
+                        priority=MessagePriority.HISTORY_OLD + recency_boost,
+                        truncatable=True,
+                        min_tokens=30,
+                        source=f"history_{i}",
+                    )
+                )
 
         # 7. Add current query (highest priority, never truncated)
-        prioritized.append(PrioritizedMessage(
-            message={"role": "user", "content": query},
-            priority=MessagePriority.CURRENT_QUERY,
-            truncatable=False,
-            source="current_query",
-        ))
+        prioritized.append(
+            PrioritizedMessage(
+                message={"role": "user", "content": query},
+                priority=MessagePriority.CURRENT_QUERY,
+                truncatable=False,
+                source="current_query",
+            )
+        )
 
         logger.info(
-            f"Built prioritized context: {len(prioritized)} messages, "
-            f"{len(sources)} sources"
+            f"Built prioritized context: {len(prioritized)} messages, {len(sources)} sources"
         )
 
         return prioritized, sources

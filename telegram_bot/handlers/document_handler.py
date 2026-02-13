@@ -34,9 +34,7 @@ async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Check file size (max 20MB)
         max_size = 20 * 1024 * 1024
         if document.file_size > max_size:
-            await update.message.reply_text(
-                "⚠️ Plik jest za duży (max 20MB)."
-            )
+            await update.message.reply_text("⚠️ Plik jest za duży (max 20MB).")
             return
 
         # Download file
@@ -78,9 +76,7 @@ async def document_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 f"Obsługiwane formaty: .txt, .md, .pdf, .docx, .html, .json"
             )
         else:
-            await update.message.reply_text(
-                f"❌ Błąd uploadu: {error_message}"
-            )
+            await update.message.reply_text(f"❌ Błąd uploadu: {error_message}")
 
     finally:
         await backend.close()

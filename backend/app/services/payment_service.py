@@ -2,7 +2,7 @@
 Payment service for Telegram Stars integration.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -88,9 +88,7 @@ class PaymentService:
         product = self.PRICING[product_id]
 
         # Get user
-        result = await self.db.execute(
-            select(User).where(User.telegram_id == user_id)
-        )
+        result = await self.db.execute(select(User).where(User.telegram_id == user_id))
         user = result.scalar_one_or_none()
 
         if not user:
@@ -127,9 +125,7 @@ class PaymentService:
 
         return payment
 
-    async def _apply_payment_benefits(
-        self, user: User, product: dict[str, Any]
-    ) -> None:
+    async def _apply_payment_benefits(self, user: User, product: dict[str, Any]) -> None:
         """
         Apply payment benefits to user.
 
@@ -137,7 +133,7 @@ class PaymentService:
             user: User instance
             product: Product dict
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import timedelta
 
         # Grant credits
         user.credits_balance += product["credits"]
@@ -149,7 +145,7 @@ class PaymentService:
             user.authorized = True
 
             # Check if user has active subscription and extend it
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             if user.subscription_expires_at and user.subscription_expires_at > now:
                 # Extend existing subscription
                 user.subscription_expires_at += timedelta(days=duration_days)
@@ -178,15 +174,11 @@ class PaymentService:
             List of Payment instances
         """
         result = await self.db.execute(
-            select(Payment)
-            .where(Payment.user_id == user_id)
-            .order_by(Payment.created_at.desc())
+            select(Payment).where(Payment.user_id == user_id).order_by(Payment.created_at.desc())
         )
         return list(result.scalars().all())
 
-    async def get_payment_by_charge_id(
-        self, telegram_payment_charge_id: str
-    ) -> Payment | None:
+    async def get_payment_by_charge_id(self, telegram_payment_charge_id: str) -> Payment | None:
         """
         Get payment by Telegram charge ID.
 
@@ -197,9 +189,7 @@ class PaymentService:
             Payment instance or None
         """
         result = await self.db.execute(
-            select(Payment).where(
-                Payment.telegram_payment_charge_id == telegram_payment_charge_id
-            )
+            select(Payment).where(Payment.telegram_payment_charge_id == telegram_payment_charge_id)
         )
         return result.scalar_one_or_none()
 

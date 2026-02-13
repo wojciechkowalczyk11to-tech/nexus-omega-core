@@ -3,9 +3,8 @@ Integration tests for chat API endpoints.
 """
 
 import pytest
-from httpx import AsyncClient
-
 from app.main import app
+from httpx import AsyncClient
 
 
 @pytest.mark.asyncio

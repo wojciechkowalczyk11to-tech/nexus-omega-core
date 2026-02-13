@@ -6,7 +6,7 @@ All exceptions include Polish error messages for user-facing errors.
 from typing import Any
 
 
-class AppException(Exception):
+class AppException(Exception):  # noqa: N818
     """Base exception for all application errors."""
 
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
@@ -178,5 +178,7 @@ class CacheError(AppException):
 class SandboxError(AppException):
     """Raised when sandbox execution fails."""
 
-    def __init__(self, message: str = "Błąd wykonania sandbox", details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str = "Błąd wykonania sandbox", details: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(message, details)

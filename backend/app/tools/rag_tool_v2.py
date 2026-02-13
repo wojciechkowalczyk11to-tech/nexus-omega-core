@@ -20,7 +20,6 @@ import aiofiles
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.exceptions import RAGError
 from app.core.logging_config import get_logger
 from app.db.models.rag_chunk import RagChunk
@@ -33,7 +32,7 @@ logger = get_logger(__name__)
 class RAGToolV2:
     """
     Advanced RAG tool with vector embeddings and semantic search.
-    
+
     Features:
     - pgvector for similarity search
     - sentence-transformers for embeddings
@@ -42,7 +41,22 @@ class RAGToolV2:
     """
 
     # Supported file extensions
-    SUPPORTED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx", ".html", ".json", ".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs"}
+    SUPPORTED_EXTENSIONS = {
+        ".txt",
+        ".md",
+        ".pdf",
+        ".docx",
+        ".html",
+        ".json",
+        ".py",
+        ".js",
+        ".ts",
+        ".java",
+        ".cpp",
+        ".c",
+        ".go",
+        ".rs",
+    }
 
     # Chunking parameters
     CHUNK_SIZE = 800  # characters (optimized for semantic units)
@@ -141,7 +155,7 @@ class RAGToolV2:
 
             # Create chunk records with embeddings
             chunk_records = []
-            for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
+            for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings, strict=False)):
                 chunk_record = RagChunk(
                     user_id=user_id,
                     rag_item_id=rag_item.id,
@@ -173,7 +187,7 @@ class RAGToolV2:
             raise RAGError(
                 f"Błąd przetwarzania dokumentu: {str(e)}",
                 {"filename": filename},
-            )
+            ) from e
 
     async def search_semantic(
         self,
@@ -200,7 +214,7 @@ class RAGToolV2:
         # Perform vector similarity search using pgvector
         # Using cosine distance operator (<=>)
         search_query = text("""
-            SELECT 
+            SELECT
                 rc.id,
                 rc.content,
                 rc.chunk_index,
@@ -271,10 +285,10 @@ class RAGToolV2:
 
         for result in results:
             content_lower = result["content"].lower()
-            
+
             # Count keyword matches
             keyword_matches = sum(1 for word in query_words if word in content_lower)
-            
+
             # Boost score based on keyword matches
             keyword_boost = keyword_matches * 0.05  # 5% boost per keyword
             result["similarity_score"] = min(1.0, result["similarity_score"] + keyword_boost)
@@ -296,9 +310,7 @@ class RAGToolV2:
             List of RagItem instances
         """
         result = await self.db.execute(
-            select(RagItem)
-            .where(RagItem.user_id == user_id)
-            .order_by(RagItem.created_at.desc())
+            select(RagItem).where(RagItem.user_id == user_id).order_by(RagItem.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -344,9 +356,22 @@ class RAGToolV2:
         Returns:
             Extracted text
         """
-        if file_ext in {".txt", ".md", ".html", ".json", ".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs"}:
+        if file_ext in {
+            ".txt",
+            ".md",
+            ".html",
+            ".json",
+            ".py",
+            ".js",
+            ".ts",
+            ".java",
+            ".cpp",
+            ".c",
+            ".go",
+            ".rs",
+        }:
             # Plain text files
-            async with aiofiles.open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            async with aiofiles.open(file_path, encoding="utf-8", errors="ignore") as f:
                 return await f.read()
 
         elif file_ext == ".pdf":
@@ -361,7 +386,7 @@ class RAGToolV2:
                 return "\n\n".join(text_parts)
             except Exception as e:
                 logger.error(f"PDF extraction error: {e}")
-                raise RAGError(f"Błąd ekstrakcji PDF: {str(e)}")
+                raise RAGError(f"Błąd ekstrakcji PDF: {str(e)}") from e
 
         elif file_ext == ".docx":
             # DOCX extraction using python-docx
@@ -373,7 +398,7 @@ class RAGToolV2:
                 return "\n\n".join(text_parts)
             except Exception as e:
                 logger.error(f"DOCX extraction error: {e}")
-                raise RAGError(f"Błąd ekstrakcji DOCX: {str(e)}")
+                raise RAGError(f"Błąd ekstrakcji DOCX: {str(e)}") from e
 
         else:
             raise RAGError(f"Nieobsługiwany typ pliku: {file_ext}")
@@ -402,7 +427,7 @@ class RAGToolV2:
             if len(para) > self.CHUNK_SIZE:
                 # Split by sentences (simple heuristic)
                 sentences = [s.strip() + "." for s in para.split(". ") if s.strip()]
-                
+
                 for sentence in sentences:
                     if len(current_chunk) + len(sentence) <= self.CHUNK_SIZE:
                         current_chunk += " " + sentence if current_chunk else sentence
@@ -428,7 +453,7 @@ class RAGToolV2:
         for i, chunk in enumerate(chunks):
             if i > 0 and len(chunks[i - 1]) > self.CHUNK_OVERLAP:
                 # Add overlap from previous chunk
-                overlap = chunks[i - 1][-self.CHUNK_OVERLAP:]
+                overlap = chunks[i - 1][-self.CHUNK_OVERLAP :]
                 chunk = overlap + " " + chunk
             chunks_with_overlap.append(chunk)
 

@@ -14,10 +14,11 @@ from __future__ import annotations
 import asyncio
 import inspect
 import time
-import traceback
-from dataclasses import dataclass, field
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
+from datetime import UTC
 from enum import Enum
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from app.core.exceptions import ToolExecutionError
 from app.core.logging_config import get_logger
@@ -29,8 +30,10 @@ logger = get_logger(__name__)
 # Data models
 # ---------------------------------------------------------------------------
 
+
 class ParameterType(str, Enum):
     """JSON Schema types for tool parameters."""
+
     STRING = "string"
     INTEGER = "integer"
     NUMBER = "number"
@@ -42,6 +45,7 @@ class ParameterType(str, Enum):
 @dataclass
 class ToolParameter:
     """Single parameter definition for a tool."""
+
     name: str
     type: ParameterType
     description: str
@@ -54,6 +58,7 @@ class ToolParameter:
 @dataclass
 class ToolResult:
     """Result returned by a tool execution."""
+
     success: bool
     data: Any = None
     error: str | None = None
@@ -70,9 +75,7 @@ class ToolResult:
                 parts = []
                 for i, item in enumerate(self.data, 1):
                     if isinstance(item, dict):
-                        formatted = "\n".join(
-                            f"  {k}: {v}" for k, v in item.items()
-                        )
+                        formatted = "\n".join(f"  {k}: {v}" for k, v in item.items())
                         parts.append(f"[{i}]\n{formatted}")
                     else:
                         parts.append(f"[{i}] {item}")
@@ -86,6 +89,7 @@ class ToolResult:
 @dataclass
 class ToolDefinition:
     """Complete definition of a tool available to the agent."""
+
     name: str
     description: str
     parameters: list[ToolParameter]
@@ -195,6 +199,7 @@ class ToolDefinition:
 # Tool Registry (singleton-like, but instantiated per-request with DB)
 # ---------------------------------------------------------------------------
 
+
 class ToolRegistry:
     """
     Centralny rejestr narzędzi agenta.
@@ -233,7 +238,9 @@ class ToolRegistry:
         """Get tool definition by name."""
         return self._tools.get(name)
 
-    def list_tools(self, category: str | None = None, enabled_only: bool = True) -> list[ToolDefinition]:
+    def list_tools(
+        self, category: str | None = None, enabled_only: bool = True
+    ) -> list[ToolDefinition]:
         """List all registered tools, optionally filtered."""
         tools = list(self._tools.values())
         if enabled_only:
@@ -273,7 +280,9 @@ class ToolRegistry:
         """Get all tool schemas in Claude format."""
         return [t.to_claude_schema() for t in self.list_tools(enabled_only=enabled_only)]
 
-    def get_tools_for_provider(self, provider_name: str, enabled_only: bool = True) -> list[dict[str, Any]]:
+    def get_tools_for_provider(
+        self, provider_name: str, enabled_only: bool = True
+    ) -> list[dict[str, Any]]:
         """Get tool schemas formatted for a specific provider."""
         provider_map = {
             "openai": self.get_openai_tools,
@@ -366,7 +375,7 @@ class ToolRegistry:
                 )
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 elapsed_ms = int((time.time() - start) * 1000)
                 last_error = f"Timeout ({tool.timeout_seconds}s) dla narzędzia '{tool_name}'"
                 logger.warning(f"Tool '{tool_name}' timed out (attempt {attempt})")
@@ -398,6 +407,7 @@ class ToolRegistry:
 # Default tool factory — creates ToolDefinitions from existing tool classes
 # ---------------------------------------------------------------------------
 
+
 def create_default_tools(db=None) -> ToolRegistry:
     """
     Create a ToolRegistry populated with all available tools.
@@ -414,6 +424,7 @@ def create_default_tools(db=None) -> ToolRegistry:
     async def _web_search(query: str, max_results: int = 5) -> ToolResult:
         try:
             from app.tools.web_search_tool import WebSearchTool
+
             tool = WebSearchTool()
             if not tool.is_available():
                 return ToolResult(
@@ -430,33 +441,36 @@ def create_default_tools(db=None) -> ToolRegistry:
         except Exception as e:
             return ToolResult(success=False, error=str(e), retryable=True)
 
-    registry.register(ToolDefinition(
-        name="web_search",
-        description="Wyszukaj informacje w internecie za pomocą Brave Search. Użyj, gdy potrzebujesz aktualnych informacji, faktów lub danych, których nie ma w bazie wiedzy.",
-        parameters=[
-            ToolParameter(
-                name="query",
-                type=ParameterType.STRING,
-                description="Zapytanie wyszukiwania w języku naturalnym",
-            ),
-            ToolParameter(
-                name="max_results",
-                type=ParameterType.INTEGER,
-                description="Maksymalna liczba wyników (1-10)",
-                required=False,
-                default=5,
-            ),
-        ],
-        handler=_web_search,
-        category="search",
-        timeout_seconds=15.0,
-        max_retries=2,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="web_search",
+            description="Wyszukaj informacje w internecie za pomocą Brave Search. Użyj, gdy potrzebujesz aktualnych informacji, faktów lub danych, których nie ma w bazie wiedzy.",
+            parameters=[
+                ToolParameter(
+                    name="query",
+                    type=ParameterType.STRING,
+                    description="Zapytanie wyszukiwania w języku naturalnym",
+                ),
+                ToolParameter(
+                    name="max_results",
+                    type=ParameterType.INTEGER,
+                    description="Maksymalna liczba wyników (1-10)",
+                    required=False,
+                    default=5,
+                ),
+            ],
+            handler=_web_search,
+            category="search",
+            timeout_seconds=15.0,
+            max_retries=2,
+        )
+    )
 
     # --- Vertex AI Search Tool ---
     async def _vertex_search(query: str, max_results: int = 5) -> ToolResult:
         try:
             from app.tools.vertex_tool import VertexSearchTool
+
             tool = VertexSearchTool()
             if not tool.is_available():
                 return ToolResult(
@@ -473,31 +487,35 @@ def create_default_tools(db=None) -> ToolRegistry:
         except Exception as e:
             return ToolResult(success=False, error=str(e), retryable=True)
 
-    registry.register(ToolDefinition(
-        name="vertex_search",
-        description="Przeszukaj bazę wiedzy Vertex AI Search. Użyj dla pytań dotyczących wewnętrznej dokumentacji, bazy wiedzy firmy lub specjalistycznych informacji.",
-        parameters=[
-            ToolParameter(
-                name="query",
-                type=ParameterType.STRING,
-                description="Zapytanie do bazy wiedzy",
-            ),
-            ToolParameter(
-                name="max_results",
-                type=ParameterType.INTEGER,
-                description="Maksymalna liczba wyników (1-10)",
-                required=False,
-                default=5,
-            ),
-        ],
-        handler=_vertex_search,
-        category="search",
-        timeout_seconds=15.0,
-        max_retries=2,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="vertex_search",
+            description="Przeszukaj bazę wiedzy Vertex AI Search. Użyj dla pytań dotyczących wewnętrznej dokumentacji, bazy wiedzy firmy lub specjalistycznych informacji.",
+            parameters=[
+                ToolParameter(
+                    name="query",
+                    type=ParameterType.STRING,
+                    description="Zapytanie do bazy wiedzy",
+                ),
+                ToolParameter(
+                    name="max_results",
+                    type=ParameterType.INTEGER,
+                    description="Maksymalna liczba wyników (1-10)",
+                    required=False,
+                    default=5,
+                ),
+            ],
+            handler=_vertex_search,
+            category="search",
+            timeout_seconds=15.0,
+            max_retries=2,
+        )
+    )
 
     # --- RAG Document Search Tool ---
-    async def _rag_search(query: str, user_id: int = 0, top_k: int = 5, db_session=None) -> ToolResult:
+    async def _rag_search(
+        query: str, user_id: int = 0, top_k: int = 5, db_session=None
+    ) -> ToolResult:
         try:
             if db_session is None:
                 return ToolResult(
@@ -506,6 +524,7 @@ def create_default_tools(db=None) -> ToolRegistry:
                     retryable=False,
                 )
             from app.tools.rag_tool import RAGTool
+
             tool = RAGTool(db_session)
             results = await tool.search(user_id, query, top_k=top_k)
             if not results:
@@ -514,28 +533,30 @@ def create_default_tools(db=None) -> ToolRegistry:
         except Exception as e:
             return ToolResult(success=False, error=str(e), retryable=True)
 
-    registry.register(ToolDefinition(
-        name="rag_search",
-        description="Przeszukaj dokumenty użytkownika (RAG). Użyj, gdy użytkownik pyta o treść swoich przesłanych dokumentów, plików PDF, DOCX lub notatek.",
-        parameters=[
-            ToolParameter(
-                name="query",
-                type=ParameterType.STRING,
-                description="Zapytanie do dokumentów użytkownika",
-            ),
-            ToolParameter(
-                name="top_k",
-                type=ParameterType.INTEGER,
-                description="Liczba najlepszych wyników do zwrócenia",
-                required=False,
-                default=5,
-            ),
-        ],
-        handler=_rag_search,
-        category="search",
-        requires_db=True,
-        timeout_seconds=10.0,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="rag_search",
+            description="Przeszukaj dokumenty użytkownika (RAG). Użyj, gdy użytkownik pyta o treść swoich przesłanych dokumentów, plików PDF, DOCX lub notatek.",
+            parameters=[
+                ToolParameter(
+                    name="query",
+                    type=ParameterType.STRING,
+                    description="Zapytanie do dokumentów użytkownika",
+                ),
+                ToolParameter(
+                    name="top_k",
+                    type=ParameterType.INTEGER,
+                    description="Liczba najlepszych wyników do zwrócenia",
+                    required=False,
+                    default=5,
+                ),
+            ],
+            handler=_rag_search,
+            category="search",
+            requires_db=True,
+            timeout_seconds=10.0,
+        )
+    )
 
     # --- Memory Read Tool ---
     async def _memory_read(key: str, user_id: int = 0, db_session=None) -> ToolResult:
@@ -543,29 +564,34 @@ def create_default_tools(db=None) -> ToolRegistry:
             if db_session is None:
                 return ToolResult(success=False, error="Brak sesji DB.", retryable=False)
             from app.services.memory_manager import MemoryManager
+
             mm = MemoryManager(db_session)
             value = await mm.get_absolute_memory(user_id, key)
             if value is None:
-                return ToolResult(success=True, data=f"Brak zapamiętanej wartości dla klucza '{key}'.")
+                return ToolResult(
+                    success=True, data=f"Brak zapamiętanej wartości dla klucza '{key}'."
+                )
             return ToolResult(success=True, data=f"{key}: {value}")
         except Exception as e:
             return ToolResult(success=False, error=str(e), retryable=False)
 
-    registry.register(ToolDefinition(
-        name="memory_read",
-        description="Odczytaj zapamiętaną preferencję lub informację użytkownika z pamięci trwałej. Użyj, gdy potrzebujesz sprawdzić wcześniej zapisane dane.",
-        parameters=[
-            ToolParameter(
-                name="key",
-                type=ParameterType.STRING,
-                description="Klucz pamięci do odczytania (np. 'imie', 'jezyk', 'preferencje')",
-            ),
-        ],
-        handler=_memory_read,
-        category="memory",
-        requires_db=True,
-        timeout_seconds=5.0,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="memory_read",
+            description="Odczytaj zapamiętaną preferencję lub informację użytkownika z pamięci trwałej. Użyj, gdy potrzebujesz sprawdzić wcześniej zapisane dane.",
+            parameters=[
+                ToolParameter(
+                    name="key",
+                    type=ParameterType.STRING,
+                    description="Klucz pamięci do odczytania (np. 'imie', 'jezyk', 'preferencje')",
+                ),
+            ],
+            handler=_memory_read,
+            category="memory",
+            requires_db=True,
+            timeout_seconds=5.0,
+        )
+    )
 
     # --- Memory Write Tool ---
     async def _memory_write(key: str, value: str, user_id: int = 0, db_session=None) -> ToolResult:
@@ -573,49 +599,64 @@ def create_default_tools(db=None) -> ToolRegistry:
             if db_session is None:
                 return ToolResult(success=False, error="Brak sesji DB.", retryable=False)
             from app.services.memory_manager import MemoryManager
+
             mm = MemoryManager(db_session)
             await mm.set_absolute_memory(user_id, key, value)
             return ToolResult(success=True, data=f"Zapamiętano: {key} = {value}")
         except Exception as e:
             return ToolResult(success=False, error=str(e), retryable=False)
 
-    registry.register(ToolDefinition(
-        name="memory_write",
-        description="Zapisz preferencję lub ważną informację użytkownika do pamięci trwałej. Użyj, gdy użytkownik prosi o zapamiętanie czegoś lub podaje ważne informacje o sobie.",
-        parameters=[
-            ToolParameter(
-                name="key",
-                type=ParameterType.STRING,
-                description="Klucz pamięci (np. 'imie', 'jezyk', 'ulubiony_model')",
-            ),
-            ToolParameter(
-                name="value",
-                type=ParameterType.STRING,
-                description="Wartość do zapamiętania",
-            ),
-        ],
-        handler=_memory_write,
-        category="memory",
-        requires_db=True,
-        timeout_seconds=5.0,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="memory_write",
+            description="Zapisz preferencję lub ważną informację użytkownika do pamięci trwałej. Użyj, gdy użytkownik prosi o zapamiętanie czegoś lub podaje ważne informacje o sobie.",
+            parameters=[
+                ToolParameter(
+                    name="key",
+                    type=ParameterType.STRING,
+                    description="Klucz pamięci (np. 'imie', 'jezyk', 'ulubiony_model')",
+                ),
+                ToolParameter(
+                    name="value",
+                    type=ParameterType.STRING,
+                    description="Wartość do zapamiętania",
+                ),
+            ],
+            handler=_memory_write,
+            category="memory",
+            requires_db=True,
+            timeout_seconds=5.0,
+        )
+    )
 
     # --- Calculator Tool ---
     async def _calculate(expression: str) -> ToolResult:
         """Safe math expression evaluator."""
         try:
             # Whitelist of allowed characters for safety
-            allowed = set("0123456789+-*/().%, episincotaglqrtbdfhx^ ")
+            set("0123456789+-*/().%, episincotaglqrtbdfhx^ ")
             expr_clean = expression.strip()
 
             import math
+
             safe_dict = {
-                "abs": abs, "round": round, "min": min, "max": max,
-                "pow": pow, "sum": sum, "len": len,
-                "pi": math.pi, "e": math.e,
-                "sqrt": math.sqrt, "log": math.log, "log10": math.log10,
-                "sin": math.sin, "cos": math.cos, "tan": math.tan,
-                "ceil": math.ceil, "floor": math.floor,
+                "abs": abs,
+                "round": round,
+                "min": min,
+                "max": max,
+                "pow": pow,
+                "sum": sum,
+                "len": len,
+                "pi": math.pi,
+                "e": math.e,
+                "sqrt": math.sqrt,
+                "log": math.log,
+                "log10": math.log10,
+                "sin": math.sin,
+                "cos": math.cos,
+                "tan": math.tan,
+                "ceil": math.ceil,
+                "floor": math.floor,
                 "__builtins__": {},
             }
             result = eval(expr_clean, safe_dict)
@@ -623,37 +664,42 @@ def create_default_tools(db=None) -> ToolRegistry:
         except Exception as e:
             return ToolResult(success=False, error=f"Błąd obliczenia: {str(e)}")
 
-    registry.register(ToolDefinition(
-        name="calculate",
-        description="Wykonaj obliczenie matematyczne. Użyj dla precyzyjnych obliczeń, konwersji jednostek, procentów itp.",
-        parameters=[
-            ToolParameter(
-                name="expression",
-                type=ParameterType.STRING,
-                description="Wyrażenie matematyczne do obliczenia (np. '2**10', 'sqrt(144)', '15% * 200')",
-            ),
-        ],
-        handler=_calculate,
-        category="utility",
-        timeout_seconds=5.0,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="calculate",
+            description="Wykonaj obliczenie matematyczne. Użyj dla precyzyjnych obliczeń, konwersji jednostek, procentów itp.",
+            parameters=[
+                ToolParameter(
+                    name="expression",
+                    type=ParameterType.STRING,
+                    description="Wyrażenie matematyczne do obliczenia (np. '2**10', 'sqrt(144)', '15% * 200')",
+                ),
+            ],
+            handler=_calculate,
+            category="utility",
+            timeout_seconds=5.0,
+        )
+    )
 
     # --- Current DateTime Tool ---
     async def _get_datetime() -> ToolResult:
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
+        from datetime import datetime
+
+        now = datetime.now(UTC)
         return ToolResult(
             success=True,
             data=f"Aktualna data i czas (UTC): {now.strftime('%Y-%m-%d %H:%M:%S')}",
         )
 
-    registry.register(ToolDefinition(
-        name="get_datetime",
-        description="Pobierz aktualną datę i godzinę (UTC). Użyj, gdy użytkownik pyta o aktualny czas lub datę.",
-        parameters=[],
-        handler=_get_datetime,
-        category="utility",
-        timeout_seconds=2.0,
-    ))
+    registry.register(
+        ToolDefinition(
+            name="get_datetime",
+            description="Pobierz aktualną datę i godzinę (UTC). Użyj, gdy użytkownik pyta o aktualny czas lub datę.",
+            parameters=[],
+            handler=_get_datetime,
+            category="utility",
+            timeout_seconds=2.0,
+        )
+    )
 
     return registry

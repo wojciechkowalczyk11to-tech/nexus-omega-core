@@ -3,16 +3,14 @@ Pytest configuration and fixtures.
 """
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from app.db.base import Base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
-
-from app.db.base import Base
-from app.db.session import get_db
 
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -65,6 +63,7 @@ async def override_get_db(db_session: AsyncSession):
     """
     Override get_db dependency for tests.
     """
+
     async def _override_get_db():
         yield db_session
 

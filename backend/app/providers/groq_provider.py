@@ -92,15 +92,13 @@ class GroqProvider(BaseProvider):
             raise ProviderError(
                 f"Groq generation failed: {str(e)}",
                 {"provider": "groq", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get Groq model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for Groq request (always free)."""
         return 0.0
 

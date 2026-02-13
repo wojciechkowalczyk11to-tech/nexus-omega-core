@@ -102,12 +102,12 @@ async def get_current_user(
                 detail="Nieprawidłowy schemat autoryzacji",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieprawidłowy format tokenu",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
     try:
         # Verify token and extract payload
@@ -124,19 +124,19 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
     # Get user from database
     user_service = UserService(db)
     try:
         user = await user_service.get_by_telegram_id(telegram_id)
         return user
-    except UserNotFoundError:
+    except UserNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Użytkownik nie istnieje",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 async def get_current_admin_user(

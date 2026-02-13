@@ -4,7 +4,7 @@ AuditLog model for tracking admin actions and security events.
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, ForeignKey, String, Text
+from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

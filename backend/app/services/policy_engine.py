@@ -3,7 +3,7 @@ Policy engine for RBAC, provider access control, and usage limits.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -154,12 +154,11 @@ class PolicyEngine:
             )
 
         # Check command access
-        if action in self.COMMAND_ACCESS.get(role, {}):
-            if not self.COMMAND_ACCESS[role][action]:
-                raise PolicyDeniedError(
-                    f"Komenda /{action} wymaga roli FULL_ACCESS lub wyższej",
-                    {"role": role, "action": action},
-                )
+        if action in self.COMMAND_ACCESS.get(role, {}) and not self.COMMAND_ACCESS[role][action]:
+            raise PolicyDeniedError(
+                f"Komenda /{action} wymaga roli FULL_ACCESS lub wyższej",
+                {"role": role, "action": action},
+            )
 
         # Check profile access
         if profile == "deep" and role == "DEMO":
@@ -169,12 +168,11 @@ class PolicyEngine:
             )
 
         # Check provider access if specified
-        if provider:
-            if not self.PROVIDER_ACCESS.get(role, {}).get(provider, False):
-                raise PolicyDeniedError(
-                    f"Provider {provider} wymaga roli FULL_ACCESS",
-                    {"role": role, "provider": provider},
-                )
+        if provider and not self.PROVIDER_ACCESS.get(role, {}).get(provider, False):
+            raise PolicyDeniedError(
+                f"Provider {provider} wymaga roli FULL_ACCESS",
+                {"role": role, "provider": provider},
+            )
 
         # Check daily limits for DEMO users
         if role == "DEMO":
@@ -226,9 +224,7 @@ class PolicyEngine:
 
         # Get today's counter
         result = await self.db.execute(
-            select(ToolCounter).where(
-                ToolCounter.user_id == telegram_id, ToolCounter.date == today
-            )
+            select(ToolCounter).where(ToolCounter.user_id == telegram_id, ToolCounter.date == today)
         )
         counter = result.scalar_one_or_none()
 
@@ -265,9 +261,7 @@ class PolicyEngine:
 
         # Get today's counter
         result = await self.db.execute(
-            select(ToolCounter).where(
-                ToolCounter.user_id == telegram_id, ToolCounter.date == today
-            )
+            select(ToolCounter).where(ToolCounter.user_id == telegram_id, ToolCounter.date == today)
         )
         counter = result.scalar_one_or_none()
 
@@ -300,9 +294,7 @@ class PolicyEngine:
 
         # Get or create today's counter
         result = await self.db.execute(
-            select(ToolCounter).where(
-                ToolCounter.user_id == telegram_id, ToolCounter.date == today
-            )
+            select(ToolCounter).where(ToolCounter.user_id == telegram_id, ToolCounter.date == today)
         )
         counter = result.scalar_one_or_none()
 
