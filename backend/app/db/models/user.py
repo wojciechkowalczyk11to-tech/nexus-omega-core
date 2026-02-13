@@ -46,7 +46,9 @@ class User(Base):
 
     # Preferences
     default_mode: Mapped[str] = mapped_column(String(50), default="eco", nullable=False)
-    cost_preference: Mapped[str] = mapped_column(String(50), default="balanced", nullable=False)  # low, balanced, quality
+    cost_preference: Mapped[str] = mapped_column(
+        String(50), default="balanced", nullable=False
+    )  # low, balanced, quality
     settings: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
 
     # Relationships

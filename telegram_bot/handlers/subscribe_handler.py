@@ -5,7 +5,6 @@
 from telegram import LabeledPrice, Update
 from telegram.ext import ContextTypes
 
-from telegram_bot.config import settings
 from telegram_bot.services.backend_client import BackendClient
 from telegram_bot.services.user_cache import UserCache
 
@@ -16,7 +15,6 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     Shows subscription options with Telegram Stars pricing.
     """
-    user = update.effective_user
 
     subscribe_text = """💎 **Subskrypcja FULL_ACCESS**
 
@@ -59,7 +57,6 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     Initiates Telegram Stars payment.
     """
-    user = update.effective_user
 
     # Check if product specified
     if not context.args or len(context.args) == 0:
@@ -103,8 +100,7 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if product_id not in pricing:
         await update.message.reply_text(
-            f"❌ Nieznany produkt: {product_id}\n\n"
-            f"Użyj /subscribe aby zobaczyć dostępne produkty."
+            f"❌ Nieznany produkt: {product_id}\n\nUżyj /subscribe aby zobaczyć dostępne produkty."
         )
         return
 
@@ -117,9 +113,7 @@ async def buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         payload=f"product:{product_id}",
         provider_token="",  # Empty for Telegram Stars
         currency="XTR",  # Telegram Stars currency
-        prices=[
-            LabeledPrice(label=product["title"], amount=product["stars"])
-        ],
+        prices=[LabeledPrice(label=product["title"], amount=product["stars"])],
     )
 
 
@@ -135,9 +129,7 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer(ok=True)
 
 
-async def successful_payment_callback(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
+async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handle successful payment.
 
@@ -180,8 +172,7 @@ async def successful_payment_callback(
 
     except Exception as e:
         await update.message.reply_text(
-            f"❌ Błąd przetwarzania płatności: {str(e)}\n\n"
-            f"Skontaktuj się z supportem."
+            f"❌ Błąd przetwarzania płatności: {str(e)}\n\nSkontaktuj się z supportem."
         )
 
     finally:

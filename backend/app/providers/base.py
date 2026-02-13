@@ -74,9 +74,7 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """
         Calculate cost in USD for a request.
 

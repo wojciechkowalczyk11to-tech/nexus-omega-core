@@ -4,7 +4,6 @@ RAG tool for document upload, chunking, and semantic search.
 
 import hashlib
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +11,6 @@ import aiofiles
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.exceptions import RAGError
 from app.core.logging_config import get_logger
 from app.db.models.rag_item import RagItem
@@ -125,11 +123,9 @@ class RAGTool:
             raise RAGError(
                 f"Błąd przetwarzania dokumentu: {str(e)}",
                 {"filename": filename},
-            )
+            ) from e
 
-    async def search(
-        self, user_id: int, query: str, top_k: int = 5
-    ) -> list[dict[str, Any]]:
+    async def search(self, user_id: int, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         """
         Search RAG documents for relevant chunks.
 
@@ -192,9 +188,7 @@ class RAGTool:
             List of RagItem instances
         """
         result = await self.db.execute(
-            select(RagItem)
-            .where(RagItem.user_id == user_id)
-            .order_by(RagItem.created_at.desc())
+            select(RagItem).where(RagItem.user_id == user_id).order_by(RagItem.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -240,7 +234,7 @@ class RAGTool:
         """
         if file_ext in {".txt", ".md", ".html", ".json"}:
             # Plain text files
-            async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+            async with aiofiles.open(file_path, encoding="utf-8") as f:
                 return await f.read()
 
         elif file_ext == ".pdf":
@@ -253,18 +247,18 @@ class RAGTool:
                 for page in reader.pages:
                     text_parts.append(page.extract_text())
                 return "\n".join(text_parts)
-            except ImportError:
+            except ImportError as e:
                 logger.error("pypdf not installed, cannot extract PDF")
                 raise RAGError(
                     "Biblioteka pypdf nie jest zainstalowana. Skontaktuj się z administratorem.",
                     {"file_ext": file_ext},
-                )
+                ) from e
             except Exception as e:
                 logger.error(f"PDF extraction error: {e}", exc_info=True)
                 raise RAGError(
                     f"Błąd ekstrakcji PDF: {str(e)}",
                     {"file_path": file_path},
-                )
+                ) from e
 
         elif file_ext == ".docx":
             # DOCX extraction using python-docx
@@ -276,18 +270,18 @@ class RAGTool:
                 for paragraph in doc.paragraphs:
                     text_parts.append(paragraph.text)
                 return "\n".join(text_parts)
-            except ImportError:
+            except ImportError as e:
                 logger.error("python-docx not installed, cannot extract DOCX")
                 raise RAGError(
                     "Biblioteka python-docx nie jest zainstalowana. Skontaktuj się z administratorem.",
                     {"file_ext": file_ext},
-                )
+                ) from e
             except Exception as e:
                 logger.error(f"DOCX extraction error: {e}", exc_info=True)
                 raise RAGError(
                     f"Błąd ekstrakcji DOCX: {str(e)}",
                     {"file_path": file_path},
-                )
+                ) from e
 
         else:
             raise RAGError(f"Unsupported file type: {file_ext}")

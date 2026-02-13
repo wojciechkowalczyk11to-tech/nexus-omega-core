@@ -21,8 +21,9 @@ Bezpieczeństwo:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +33,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.exceptions import GitHubError, SandboxError
+from app.core.exceptions import GitHubError
 from app.core.logging_config import get_logger
 from app.db.models.rag_chunk import RagChunk
 from app.db.models.rag_item import RagItem
@@ -150,7 +151,7 @@ class GitHubDevinTool:
                 }
             except Exception as e:
                 logger.error(f"Failed to pull repository: {e}")
-                raise GitHubError(f"Failed to update repository: {str(e)}")
+                raise GitHubError(f"Failed to update repository: {str(e)}") from e
 
         try:
             # Clone repository
@@ -189,7 +190,7 @@ class GitHubDevinTool:
 
         except Exception as e:
             logger.error(f"Failed to clone repository: {e}")
-            raise GitHubError(f"Failed to clone repository: {str(e)}")
+            raise GitHubError(f"Failed to clone repository: {str(e)}") from e
 
     async def index_repository(
         self,
@@ -214,7 +215,7 @@ class GitHubDevinTool:
 
         # Find all code files
         code_files = []
-        for root, dirs, files in os.walk(repo_path):
+        for root, _dirs, files in os.walk(repo_path):
             # Skip .git directory
             if ".git" in root:
                 continue
@@ -268,7 +269,7 @@ class GitHubDevinTool:
         for file_path in code_files:
             try:
                 # Read file content
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
 
                 if not content.strip():
@@ -313,7 +314,7 @@ class GitHubDevinTool:
 
         # Create chunk records
         chunk_records = []
-        for chunk_data, embedding in zip(all_chunks, embeddings):
+        for chunk_data, embedding in zip(all_chunks, embeddings, strict=False):
             chunk_record = RagChunk(
                 user_id=self.user_id,
                 rag_item_id=rag_item.id,
@@ -357,8 +358,9 @@ class GitHubDevinTool:
         Returns:
             List of relevant code chunks
         """
-        from app.services.embedding_service import embed_text
         from sqlalchemy import text as sql_text
+
+        from app.services.embedding_service import embed_text
 
         # Find RAG item for repository
         result = await self.db.execute(
@@ -378,7 +380,7 @@ class GitHubDevinTool:
 
         # Semantic search
         search_query = sql_text("""
-            SELECT 
+            SELECT
                 rc.content,
                 rc.chunk_metadata,
                 1 - (rc.embedding <=> :query_embedding) as similarity_score
@@ -478,12 +480,12 @@ class GitHubDevinTool:
                 "commit_sha": commit.hexsha,
                 "message": message,
                 "files": files,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
             logger.error(f"Failed to create commit: {e}")
-            raise GitHubError(f"Failed to create commit: {str(e)}")
+            raise GitHubError(f"Failed to create commit: {str(e)}") from e
 
     async def create_pull_request(
         self,
@@ -529,18 +531,16 @@ class GitHubDevinTool:
 
         except Exception as e:
             logger.error(f"Failed to create PR: {e}")
-            raise GitHubError(f"Failed to create pull request: {str(e)}")
+            raise GitHubError(f"Failed to create pull request: {str(e)}") from e
 
     def _get_directory_size(self, path: str) -> int:
         """Get total size of directory in bytes."""
         total_size = 0
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for file in files:
                 file_path = os.path.join(root, file)
-                try:
+                with contextlib.suppress(OSError):
                     total_size += os.path.getsize(file_path)
-                except OSError:
-                    pass
         return total_size
 
     def _chunk_code_file(self, content: str, file_path: str) -> list[str]:

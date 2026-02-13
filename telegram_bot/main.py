@@ -53,18 +53,13 @@ def main() -> None:
 
     # Register payment handlers
     from telegram.ext import PreCheckoutQueryHandler
+
     application.add_handler(PreCheckoutQueryHandler(precheckout_callback))
-    application.add_handler(
-        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
-    )
+    application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback))
 
     # Register message handlers
-    application.add_handler(
-        MessageHandler(filters.Document.ALL, document_handler)
-    )
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message_streaming)
-    )
+    application.add_handler(MessageHandler(filters.Document.ALL, document_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message_streaming))
 
     # Start polling
     logger.info("Bot started successfully. Polling for updates...")

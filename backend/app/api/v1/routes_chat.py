@@ -97,7 +97,7 @@ async def chat(
 
         if response.sources:
             source_list = " ".join(
-                [f"{i+1}) {s['title']}" for i, s in enumerate(response.sources[:3])]
+                [f"{i + 1}) {s['title']}" for i, s in enumerate(response.sources[:3])]
             )
             meta_footer += f"\n📚 Źródła (Vertex): {source_list}"
 
@@ -123,19 +123,19 @@ async def chat(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.message,
-        )
+        ) from e
     except AllProvidersFailedError as e:
         logger.error(f"All providers failed for user {current_user.telegram_id}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message,
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Unexpected error in chat: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Błąd przetwarzania zapytania: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/providers", response_model=ProvidersResponse)
@@ -163,12 +163,10 @@ async def get_providers(
     provider_access = PolicyEngine.PROVIDER_ACCESS.get(role, {})
 
     available_providers = [
-        {**p, "available": provider_access.get(p["name"], False)}
-        for p in all_providers
+        {**p, "available": provider_access.get(p["name"], False)} for p in all_providers
     ]
 
     return ProvidersResponse(providers=available_providers)
-
 
 
 class AgentTraceResponse(BaseModel):
@@ -199,28 +197,29 @@ async def get_message_traces(
 ) -> AgentTracesResponse:
     """
     Get agent reasoning traces for a specific message.
-    
+
     Returns the complete thought process of the agent including:
     - Reasoning steps
     - Tool calls and results
     - Self-correction attempts
     - Timing information
-    
+
     Args:
         message_id: Message ID
         current_user: Current authenticated user
         db: Database session
-        
+
     Returns:
         Agent traces for the message
-        
+
     Raises:
         404: If message not found or not owned by user
     """
     from sqlalchemy import select
+
     from app.db.models.agent_trace import AgentTrace
     from app.db.models.message import Message
-    
+
     # Verify message exists and belongs to user
     result = await db.execute(
         select(Message).where(
@@ -229,13 +228,13 @@ async def get_message_traces(
         )
     )
     message = result.scalar_one_or_none()
-    
+
     if not message:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Message not found",
         )
-    
+
     # Get all traces for this message
     result = await db.execute(
         select(AgentTrace)
@@ -243,7 +242,7 @@ async def get_message_traces(
         .order_by(AgentTrace.iteration, AgentTrace.timestamp_ms)
     )
     traces = list(result.scalars().all())
-    
+
     # Convert to response format
     trace_responses = [
         AgentTraceResponse(
@@ -258,7 +257,7 @@ async def get_message_traces(
         )
         for trace in traces
     ]
-    
+
     return AgentTracesResponse(
         message_id=message_id,
         traces=trace_responses,

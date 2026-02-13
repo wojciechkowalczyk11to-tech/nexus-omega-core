@@ -26,9 +26,7 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             new_mode = context.args[0].lower()
 
             if new_mode not in ("eco", "smart", "deep"):
-                await update.message.reply_text(
-                    "⚠️ Nieprawidłowy tryb. Dostępne: eco, smart, deep"
-                )
+                await update.message.reply_text("⚠️ Nieprawidłowy tryb. Dostępne: eco, smart, deep")
                 return
 
             # Set new mode

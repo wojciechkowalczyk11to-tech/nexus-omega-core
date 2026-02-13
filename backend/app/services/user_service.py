@@ -2,6 +2,8 @@
 User service for CRUD operations on User model.
 """
 
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,9 +30,7 @@ class UserService:
         Raises:
             UserNotFoundError: If user not found
         """
-        result = await self.db.execute(
-            select(User).where(User.telegram_id == telegram_id)
-        )
+        result = await self.db.execute(select(User).where(User.telegram_id == telegram_id))
         user = result.scalar_one_or_none()
 
         if not user:
@@ -141,7 +141,7 @@ class UserService:
         self,
         telegram_id: int,
         subscription_tier: str,
-        expires_at: "datetime",
+        expires_at: datetime,
     ) -> User:
         """
         Update user subscription.
@@ -157,7 +157,6 @@ class UserService:
         Raises:
             UserNotFoundError: If user not found
         """
-        from datetime import datetime
 
         user = await self.get_by_telegram_id(telegram_id)
         user.subscription_tier = subscription_tier

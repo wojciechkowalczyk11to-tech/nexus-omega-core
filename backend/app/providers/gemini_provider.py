@@ -4,7 +4,7 @@ import asyncio
 import time
 from typing import Any
 
-import google.generativeai as genaiai
+import google.generativeai as genai
 
 from app.core.exceptions import ProviderError
 from app.core.logging_config import get_logger
@@ -109,15 +109,13 @@ class GeminiProvider(BaseProvider):
             raise ProviderError(
                 f"Gemini generation failed: {str(e)}",
                 {"provider": "gemini", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get Gemini model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for Gemini request."""
         pricing = self.PRICING.get(model, {"input": 0.0, "output": 0.0})
 
@@ -155,9 +153,7 @@ class GeminiProvider(BaseProvider):
             # Map roles
             if role == "system":
                 # Gemini doesn't have system role, prepend to first user message
-                gemini_messages.append(
-                    {"role": "user", "parts": [f"[System] {content}"]}
-                )
+                gemini_messages.append({"role": "user", "parts": [f"[System] {content}"]})
             elif role == "user":
                 gemini_messages.append({"role": "user", "parts": [content]})
             elif role == "assistant":

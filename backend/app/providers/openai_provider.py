@@ -90,15 +90,13 @@ class OpenAIProvider(BaseProvider):
             raise ProviderError(
                 f"OpenAI generation failed: {str(e)}",
                 {"provider": "openai", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get OpenAI model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for OpenAI request."""
         pricing = self.PRICING.get(model, {"input": 2.5, "output": 10.0})
 

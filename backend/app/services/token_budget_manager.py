@@ -17,10 +17,8 @@ Strategia priorytetów (od najwyższego):
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any
 
 from app.core.logging_config import get_logger
 
@@ -30,6 +28,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # Token counting
 # ---------------------------------------------------------------------------
+
 
 class TokenCounter:
     """
@@ -50,6 +49,7 @@ class TokenCounter:
         cls._encoder_loaded = True
         try:
             import tiktoken
+
             cls._encoder = tiktoken.get_encoding("cl100k_base")
             logger.info("TokenCounter: using tiktoken cl100k_base encoder")
         except ImportError:
@@ -105,8 +105,10 @@ class TokenCounter:
 # Priority system
 # ---------------------------------------------------------------------------
 
+
 class MessagePriority(IntEnum):
     """Priority levels for context messages (higher = more important)."""
+
     SNAPSHOT = 10
     TOOL_RESULT = 20
     HISTORY_OLD = 30
@@ -123,6 +125,7 @@ class MessagePriority(IntEnum):
 @dataclass
 class PrioritizedMessage:
     """Message with priority metadata for smart truncation."""
+
     message: dict[str, str]
     priority: MessagePriority
     token_count: int = 0
@@ -192,9 +195,11 @@ def get_model_token_limit(model: str, provider: str = "") -> int:
 # Token Budget Manager
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BudgetReport:
     """Report from token budget management."""
+
     original_token_count: int
     final_token_count: int
     model_limit: int
@@ -310,7 +315,9 @@ class TokenBudgetManager:
         if total_tokens <= self._effective_budget:
             final_messages = [pm.message for pm in prioritized_messages]
             report.final_token_count = total_tokens
-            report.budget_utilization = total_tokens / self._effective_budget if self._effective_budget > 0 else 0
+            report.budget_utilization = (
+                total_tokens / self._effective_budget if self._effective_budget > 0 else 0
+            )
             logger.info(
                 f"Context fits in budget: {total_tokens}/{self._effective_budget} tokens "
                 f"({report.budget_utilization:.1%})"
@@ -328,7 +335,7 @@ class TokenBudgetManager:
             [pm for pm in prioritized_messages if pm.truncatable],
             key=lambda pm: pm.priority,
         )
-        non_truncatable = [pm for pm in prioritized_messages if not pm.truncatable]
+        [pm for pm in prioritized_messages if not pm.truncatable]
 
         # Phase 1: Remove lowest-priority messages entirely
         tokens_to_save = total_tokens - self._effective_budget
@@ -350,12 +357,13 @@ class TokenBudgetManager:
         # Phase 2: If still over budget, truncate remaining truncatable messages
         if total_tokens > self._effective_budget:
             remaining = [
-                (i, pm) for i, pm in enumerate(prioritized_messages)
+                (i, pm)
+                for i, pm in enumerate(prioritized_messages)
                 if i not in removed_indices and pm.truncatable
             ]
             remaining.sort(key=lambda x: x[1].priority)
 
-            for idx, pm in remaining:
+            for _, pm in remaining:
                 if total_tokens <= self._effective_budget:
                     break
 
@@ -452,7 +460,9 @@ class TokenBudgetManager:
                 break
 
         if middle_parts:
-            truncation_note = f"\n\n[...pominięto {len(paragraphs) - 2 - len(middle_parts)} akapitów...]"
+            truncation_note = (
+                f"\n\n[...pominięto {len(paragraphs) - 2 - len(middle_parts)} akapitów...]"
+            )
             return first + "\n\n" + "\n\n".join(middle_parts) + truncation_note + "\n\n" + last
         else:
             return first + "\n\n[...treść skrócona...]\n\n" + last

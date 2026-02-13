@@ -13,8 +13,6 @@ Model jest ładowany raz i cache'owany w pamięci.
 from __future__ import annotations
 
 import asyncio
-from functools import lru_cache
-from typing import Any
 
 from sentence_transformers import SentenceTransformer
 
@@ -26,7 +24,7 @@ logger = get_logger(__name__)
 class EmbeddingService:
     """
     Service for generating vector embeddings using sentence-transformers.
-    
+
     Uses all-MiniLM-L6-v2 model:
     - Fast: ~2000 sentences/second on CPU
     - Compact: 384 dimensions
@@ -41,7 +39,7 @@ class EmbeddingService:
     def _load_model(cls) -> SentenceTransformer:
         """
         Lazy-load the embedding model.
-        
+
         Returns:
             Loaded SentenceTransformer model
         """
@@ -55,10 +53,10 @@ class EmbeddingService:
     async def generate_embedding(cls, text: str) -> list[float]:
         """
         Generate embedding for a single text.
-        
+
         Args:
             text: Input text
-            
+
         Returns:
             384-dimensional embedding vector
         """
@@ -67,14 +65,14 @@ class EmbeddingService:
             return [0.0] * cls._dimensions
 
         model = cls._load_model()
-        
+
         # Run in executor to avoid blocking event loop
         loop = asyncio.get_event_loop()
         embedding = await loop.run_in_executor(
             None,
             lambda: model.encode(text, convert_to_numpy=True).tolist(),
         )
-        
+
         return embedding
 
     @classmethod
@@ -85,11 +83,11 @@ class EmbeddingService:
     ) -> list[list[float]]:
         """
         Generate embeddings for multiple texts in batches.
-        
+
         Args:
             texts: List of input texts
             batch_size: Number of texts to process at once
-            
+
         Returns:
             List of embedding vectors
         """
@@ -97,7 +95,7 @@ class EmbeddingService:
             return []
 
         model = cls._load_model()
-        
+
         # Run in executor to avoid blocking event loop
         loop = asyncio.get_event_loop()
         embeddings = await loop.run_in_executor(
@@ -109,14 +107,14 @@ class EmbeddingService:
                 show_progress_bar=False,
             ).tolist(),
         )
-        
+
         return embeddings
 
     @classmethod
     def get_dimensions(cls) -> int:
         """
         Get the dimensionality of embeddings.
-        
+
         Returns:
             Number of dimensions (384)
         """
@@ -130,32 +128,33 @@ class EmbeddingService:
     ) -> float:
         """
         Compute cosine similarity between two embeddings.
-        
+
         Args:
             embedding1: First embedding vector
             embedding2: Second embedding vector
-            
+
         Returns:
             Cosine similarity score (0.0 to 1.0)
         """
         import numpy as np
-        
+
         vec1 = np.array(embedding1)
         vec2 = np.array(embedding2)
-        
+
         # Cosine similarity
         dot_product = np.dot(vec1, vec2)
         norm1 = np.linalg.norm(vec1)
         norm2 = np.linalg.norm(vec2)
-        
+
         if norm1 == 0 or norm2 == 0:
             return 0.0
-        
+
         similarity = dot_product / (norm1 * norm2)
         return float(similarity)
 
 
 # Convenience functions
+
 
 async def embed_text(text: str) -> list[float]:
     """Generate embedding for a single text."""

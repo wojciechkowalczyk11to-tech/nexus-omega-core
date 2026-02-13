@@ -58,7 +58,7 @@ class ModelConfig:
 class SLMRouter:
     """
     SLM-first cost-aware router.
-    
+
     Prefers small, fast, cheap models and escalates only when necessary.
     """
 
@@ -164,49 +164,50 @@ class SLMRouter:
     ) -> ModelConfig:
         """
         Select optimal model based on difficulty and cost preference.
-        
+
         Args:
             difficulty: Task difficulty (simple, moderate, complex)
             cost_preference: User's cost preference
             requires_function_calling: Whether function calling is needed
             min_context_window: Minimum required context window
-            
+
         Returns:
             Selected model configuration
         """
         # Determine target tier based on difficulty and cost preference
         target_tier = cls._determine_tier(difficulty, cost_preference)
-        
+
         # Get models from target tier
         candidate_models = cls.MODELS.get(target_tier, [])
-        
+
         # Filter by requirements
         filtered_models = [
-            m for m in candidate_models
+            m
+            for m in candidate_models
             if (not requires_function_calling or m.supports_function_calling)
             and m.context_window >= min_context_window
         ]
-        
+
         if not filtered_models:
             # Fallback to next tier if no models match
             logger.warning(f"No models found in tier {target_tier}, escalating")
             return cls._escalate_tier(target_tier, requires_function_calling, min_context_window)
-        
+
         # Select fastest model from filtered candidates
         selected = max(filtered_models, key=lambda m: m.speed_score)
-        
+
         logger.info(
             f"Selected model: {selected.provider}/{selected.model} "
             f"(tier={selected.tier}, difficulty={difficulty}, cost_pref={cost_preference})"
         )
-        
+
         return selected
 
     @classmethod
     def _determine_tier(cls, difficulty: str, cost_preference: CostPreference) -> ModelTier:
         """
         Determine target tier based on difficulty and cost preference.
-        
+
         Strategy:
         - LOW cost preference: Always start with ULTRA_CHEAP, escalate reluctantly
         - BALANCED: Match tier to difficulty
@@ -218,22 +219,32 @@ class SLMRouter:
             "moderate": ModelTier.CHEAP,
             "complex": ModelTier.BALANCED,
         }
-        
+
         base_tier = base_tier_map.get(difficulty, ModelTier.CHEAP)
-        
+
         # Adjust based on cost preference
         if cost_preference == CostPreference.LOW:
             # Always prefer cheaper
-            tier_order = [ModelTier.ULTRA_CHEAP, ModelTier.CHEAP, ModelTier.BALANCED, ModelTier.PREMIUM]
+            tier_order = [
+                ModelTier.ULTRA_CHEAP,
+                ModelTier.CHEAP,
+                ModelTier.BALANCED,
+                ModelTier.PREMIUM,
+            ]
             base_index = tier_order.index(base_tier)
             return tier_order[max(0, base_index - 1)]
-        
+
         elif cost_preference == CostPreference.QUALITY:
             # Prefer higher quality
-            tier_order = [ModelTier.ULTRA_CHEAP, ModelTier.CHEAP, ModelTier.BALANCED, ModelTier.PREMIUM]
+            tier_order = [
+                ModelTier.ULTRA_CHEAP,
+                ModelTier.CHEAP,
+                ModelTier.BALANCED,
+                ModelTier.PREMIUM,
+            ]
             base_index = tier_order.index(base_tier)
             return tier_order[min(len(tier_order) - 1, base_index + 1)]
-        
+
         else:  # BALANCED
             return base_tier
 
@@ -246,34 +257,35 @@ class SLMRouter:
     ) -> ModelConfig:
         """
         Escalate to next tier when current tier has no suitable models.
-        
+
         Args:
             current_tier: Current tier
             requires_function_calling: Whether function calling is needed
             min_context_window: Minimum required context window
-            
+
         Returns:
             Model from next tier
         """
         tier_order = [ModelTier.ULTRA_CHEAP, ModelTier.CHEAP, ModelTier.BALANCED, ModelTier.PREMIUM]
         current_index = tier_order.index(current_tier)
-        
+
         # Try next tiers
         for i in range(current_index + 1, len(tier_order)):
             next_tier = tier_order[i]
             candidate_models = cls.MODELS.get(next_tier, [])
-            
+
             filtered_models = [
-                m for m in candidate_models
+                m
+                for m in candidate_models
                 if (not requires_function_calling or m.supports_function_calling)
                 and m.context_window >= min_context_window
             ]
-            
+
             if filtered_models:
                 selected = max(filtered_models, key=lambda m: m.speed_score)
                 logger.info(f"Escalated to tier {next_tier}: {selected.provider}/{selected.model}")
                 return selected
-        
+
         # Fallback to any model if nothing matches
         logger.error("No suitable model found, using fallback")
         return cls.MODELS[ModelTier.BALANCED][0]
@@ -287,12 +299,12 @@ class SLMRouter:
     ) -> float:
         """
         Estimate cost for a request.
-        
+
         Args:
             model: Model configuration
             input_tokens: Number of input tokens
             output_tokens: Number of output tokens
-            
+
         Returns:
             Estimated cost in USD
         """
@@ -309,12 +321,12 @@ class SLMRouter:
     ) -> bool:
         """
         Determine if task should be escalated to higher tier.
-        
+
         Args:
             current_model: Current model being used
             task_complexity_score: Complexity score (0.0 to 1.0)
             quality_threshold: Minimum quality threshold
-            
+
         Returns:
             True if should escalate
         """
@@ -325,16 +337,16 @@ class SLMRouter:
             ModelTier.BALANCED: 0.7,
             ModelTier.PREMIUM: 1.0,
         }
-        
+
         model_capability = tier_scores.get(current_model.tier, 0.5)
-        
+
         # Escalate if task complexity exceeds model capability by threshold
         should_escalate = task_complexity_score > (model_capability + (1.0 - quality_threshold))
-        
+
         if should_escalate:
             logger.info(
                 f"Recommending escalation: complexity={task_complexity_score:.2f}, "
                 f"model_capability={model_capability:.2f}"
             )
-        
+
         return should_escalate
