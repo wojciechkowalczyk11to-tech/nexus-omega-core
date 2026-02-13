@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements.txt
+      - run: ruff check backend/ telegram_bot/
+      - run: ruff format --check backend/ telegram_bot/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements.txt
+      - run: pip install pytest pytest-asyncio
+      - run: cd backend && TELEGRAM_BOT_TOKEN=x DEMO_UNLOCK_CODE=x BOOTSTRAP_ADMIN_CODE=x JWT_SECRET_KEY=x DATABASE_URL=sqlite+aiosqlite:///tmp/test.db POSTGRES_PASSWORD=x PYTHONPATH=. pytest tests/ -v
