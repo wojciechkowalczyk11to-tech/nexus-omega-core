@@ -29,7 +29,9 @@ class Settings(BaseSettings):
     webhook_secret_token: str = Field(default="", description="Webhook secret token")
 
     # === Access Control ===
-    allowed_user_ids: list[int] = Field(default_factory=list, description="Allowed Telegram user IDs")
+    allowed_user_ids: list[int] = Field(
+        default_factory=list, description="Allowed Telegram user IDs"
+    )
     admin_user_ids: list[int] = Field(default_factory=list, description="Admin Telegram user IDs")
     full_telegram_ids: str = Field(default="", description="Comma-separated FULL access user IDs")
     demo_telegram_ids: str = Field(default="", description="Comma-separated DEMO access user IDs")
@@ -68,6 +70,9 @@ class Settings(BaseSettings):
     github_app_id: str = Field(default="", description="GitHub App ID")
     github_private_key_path: str = Field(default="", description="Path to GitHub private key")
     github_webhook_secret: str = Field(default="", description="GitHub webhook secret")
+    github_token: str = Field(
+        default="", description="GitHub Personal Access Token for API operations"
+    )
 
     # === Provider Policy ===
     provider_policy_json: str = Field(
@@ -90,9 +95,13 @@ class Settings(BaseSettings):
     # === Limits ===
     demo_grok_daily: int = Field(default=5, description="Daily Grok calls for DEMO users")
     demo_web_daily: int = Field(default=5, description="Daily web search calls for DEMO users")
-    demo_smart_credits_daily: int = Field(default=20, description="Daily smart credits for DEMO users")
+    demo_smart_credits_daily: int = Field(
+        default=20, description="Daily smart credits for DEMO users"
+    )
     demo_deepseek_daily: int = Field(default=50, description="Daily DeepSeek calls for DEMO users")
-    full_daily_usd_cap: float = Field(default=5.0, description="Daily USD spending cap for FULL users")
+    full_daily_usd_cap: float = Field(
+        default=5.0, description="Daily USD spending cap for FULL users"
+    )
     rate_limit_per_minute: int = Field(default=30, description="Rate limit per user per minute")
 
     @field_validator("allowed_user_ids", mode="before")

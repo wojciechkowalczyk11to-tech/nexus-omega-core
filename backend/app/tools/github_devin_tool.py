@@ -10,7 +10,7 @@ Funkcjonalności:
 
 Architektura:
     User Request → Sandbox → Git Operations → GitHub API
-    
+
 Bezpieczeństwo:
 - Wszystkie operacje w izolowanym sandboxie
 - Walidacja ścieżek (path traversal protection)
@@ -45,15 +45,40 @@ logger = get_logger(__name__)
 class GitHubDevinTool:
     """
     GitHub Devin-mode tool with sandbox integration.
-    
+
     Provides safe, isolated environment for GitHub operations.
     """
 
     # Supported code file extensions for indexing
     CODE_EXTENSIONS = {
-        ".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".cpp", ".c", ".h", ".hpp",
-        ".go", ".rs", ".rb", ".php", ".swift", ".kt", ".scala", ".sh", ".sql",
-        ".html", ".css", ".scss", ".vue", ".md", ".json", ".yaml", ".yml", ".xml",
+        ".py",
+        ".js",
+        ".ts",
+        ".jsx",
+        ".tsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".hpp",
+        ".go",
+        ".rs",
+        ".rb",
+        ".php",
+        ".swift",
+        ".kt",
+        ".scala",
+        ".sh",
+        ".sql",
+        ".html",
+        ".css",
+        ".scss",
+        ".vue",
+        ".md",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".xml",
     }
 
     # Repository size limits
@@ -68,7 +93,7 @@ class GitHubDevinTool:
     ) -> None:
         """
         Initialize GitHub Devin tool.
-        
+
         Args:
             user_id: User's Telegram ID
             db: Database session
@@ -77,8 +102,8 @@ class GitHubDevinTool:
         self.user_id = user_id
         self.db = db
         self.sandbox = Sandbox(user_id)
-        self.github_token = github_token or settings.GITHUB_TOKEN
-        
+        self.github_token = github_token or settings.github_token
+
         if self.github_token:
             self.github = Github(self.github_token)
         else:
@@ -92,21 +117,21 @@ class GitHubDevinTool:
     ) -> dict[str, Any]:
         """
         Clone GitHub repository to sandbox.
-        
+
         Args:
             repo_url: Repository URL (e.g., https://github.com/user/repo)
             branch: Branch to clone
-            
+
         Returns:
             Clone result with path and stats
-            
+
         Raises:
             GitHubError: If clone fails
         """
         # Extract repo name from URL
         repo_name = repo_url.rstrip("/").split("/")[-1].replace(".git", "")
         repo_path = self.sandbox.get_repos_path(repo_name)
-        
+
         # Check if already cloned
         if os.path.exists(repo_path):
             logger.info(f"Repository {repo_name} already exists, pulling latest")
@@ -126,11 +151,11 @@ class GitHubDevinTool:
             except Exception as e:
                 logger.error(f"Failed to pull repository: {e}")
                 raise GitHubError(f"Failed to update repository: {str(e)}")
-        
+
         try:
             # Clone repository
             logger.info(f"Cloning repository {repo_url} to {repo_path}")
-            
+
             await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: Repo.clone_from(
@@ -140,19 +165,20 @@ class GitHubDevinTool:
                     depth=1,  # Shallow clone for speed
                 ),
             )
-            
+
             # Check repo size
             repo_size_mb = self._get_directory_size(repo_path) / (1024 * 1024)
             if repo_size_mb > self.MAX_REPO_SIZE_MB:
                 # Clean up
                 import shutil
+
                 shutil.rmtree(repo_path)
                 raise GitHubError(
                     f"Repository too large: {repo_size_mb:.1f}MB (max {self.MAX_REPO_SIZE_MB}MB)"
                 )
-            
+
             logger.info(f"Successfully cloned {repo_name} ({repo_size_mb:.1f}MB)")
-            
+
             return {
                 "repo_name": repo_name,
                 "repo_path": repo_path,
@@ -160,7 +186,7 @@ class GitHubDevinTool:
                 "branch": branch,
                 "size_mb": repo_size_mb,
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to clone repository: {e}")
             raise GitHubError(f"Failed to clone repository: {str(e)}")
@@ -171,50 +197,50 @@ class GitHubDevinTool:
     ) -> dict[str, Any]:
         """
         Index repository code with pgvector embeddings.
-        
+
         Args:
             repo_name: Repository name
-            
+
         Returns:
             Indexing result with stats
-            
+
         Raises:
             GitHubError: If indexing fails
         """
         repo_path = self.sandbox.get_repos_path(repo_name)
-        
+
         if not os.path.exists(repo_path):
             raise GitHubError(f"Repository not found: {repo_name}")
-        
+
         # Find all code files
         code_files = []
         for root, dirs, files in os.walk(repo_path):
             # Skip .git directory
             if ".git" in root:
                 continue
-            
+
             for file in files:
                 file_path = os.path.join(root, file)
                 file_ext = Path(file).suffix.lower()
-                
+
                 if file_ext in self.CODE_EXTENSIONS:
                     code_files.append(file_path)
-                    
+
                     if len(code_files) >= self.MAX_FILES_TO_INDEX:
                         break
-            
+
             if len(code_files) >= self.MAX_FILES_TO_INDEX:
                 break
-        
+
         if not code_files:
             return {
                 "repo_name": repo_name,
                 "files_indexed": 0,
                 "chunks_created": 0,
             }
-        
+
         logger.info(f"Indexing {len(code_files)} files from {repo_name}")
-        
+
         # Create RAG item for repository
         rag_item = RagItem(
             user_id=self.user_id,
@@ -230,45 +256,47 @@ class GitHubDevinTool:
                 "files_count": len(code_files),
             },
         )
-        
+
         self.db.add(rag_item)
         await self.db.flush()
         await self.db.refresh(rag_item)
-        
+
         # Process files and create chunks
         all_chunks = []
         chunk_index = 0
-        
+
         for file_path in code_files:
             try:
                 # Read file content
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                
+
                 if not content.strip():
                     continue
-                
+
                 # Get relative path for metadata
                 rel_path = os.path.relpath(file_path, repo_path)
-                
+
                 # Chunk file content (by function/class for code)
                 file_chunks = self._chunk_code_file(content, rel_path)
-                
+
                 for chunk_text in file_chunks:
-                    all_chunks.append({
-                        "text": chunk_text,
-                        "index": chunk_index,
-                        "metadata": {
-                            "file_path": rel_path,
-                            "file_ext": Path(file_path).suffix,
-                        },
-                    })
+                    all_chunks.append(
+                        {
+                            "text": chunk_text,
+                            "index": chunk_index,
+                            "metadata": {
+                                "file_path": rel_path,
+                                "file_ext": Path(file_path).suffix,
+                            },
+                        }
+                    )
                     chunk_index += 1
-                    
+
             except Exception as e:
                 logger.warning(f"Failed to process file {file_path}: {e}")
                 continue
-        
+
         if not all_chunks:
             rag_item.status = "failed"
             await self.db.flush()
@@ -277,12 +305,12 @@ class GitHubDevinTool:
                 "files_indexed": 0,
                 "chunks_created": 0,
             }
-        
+
         # Generate embeddings in batch
         logger.info(f"Generating embeddings for {len(all_chunks)} chunks")
         chunk_texts = [c["text"] for c in all_chunks]
         embeddings = await embed_texts(chunk_texts, batch_size=32)
-        
+
         # Create chunk records
         chunk_records = []
         for chunk_data, embedding in zip(all_chunks, embeddings):
@@ -295,16 +323,16 @@ class GitHubDevinTool:
                 chunk_metadata=chunk_data["metadata"],
             )
             chunk_records.append(chunk_record)
-        
+
         self.db.add_all(chunk_records)
-        
+
         # Update RAG item
         rag_item.chunk_count = len(chunk_records)
         rag_item.status = "indexed"
         await self.db.flush()
-        
+
         logger.info(f"Indexed {repo_name}: {len(code_files)} files, {len(chunk_records)} chunks")
-        
+
         return {
             "repo_name": repo_name,
             "files_indexed": len(code_files),
@@ -320,18 +348,18 @@ class GitHubDevinTool:
     ) -> list[dict[str, Any]]:
         """
         Search code in indexed repository using semantic search.
-        
+
         Args:
             repo_name: Repository name
             query: Search query
             top_k: Number of results
-            
+
         Returns:
             List of relevant code chunks
         """
         from app.services.embedding_service import embed_text
         from sqlalchemy import text as sql_text
-        
+
         # Find RAG item for repository
         result = await self.db.execute(
             select(RagItem).where(
@@ -341,13 +369,13 @@ class GitHubDevinTool:
             )
         )
         rag_item = result.scalar_one_or_none()
-        
+
         if not rag_item:
             return []
-        
+
         # Generate query embedding
         query_embedding = await embed_text(query)
-        
+
         # Semantic search
         search_query = sql_text("""
             SELECT 
@@ -359,7 +387,7 @@ class GitHubDevinTool:
             ORDER BY rc.embedding <=> :query_embedding
             LIMIT :limit
         """)
-        
+
         result = await self.db.execute(
             search_query,
             {
@@ -368,9 +396,9 @@ class GitHubDevinTool:
                 "limit": top_k,
             },
         )
-        
+
         rows = result.fetchall()
-        
+
         return [
             {
                 "content": row[0],
@@ -384,11 +412,11 @@ class GitHubDevinTool:
     async def read_file(self, repo_name: str, file_path: str) -> str:
         """
         Read file from repository.
-        
+
         Args:
             repo_name: Repository name
             file_path: Relative file path
-            
+
         Returns:
             File content
         """
@@ -403,12 +431,12 @@ class GitHubDevinTool:
     ) -> str:
         """
         Write file to repository.
-        
+
         Args:
             repo_name: Repository name
             file_path: Relative file path
             content: File content
-            
+
         Returns:
             Absolute path to written file
         """
@@ -423,36 +451,36 @@ class GitHubDevinTool:
     ) -> dict[str, Any]:
         """
         Create git commit.
-        
+
         Args:
             repo_name: Repository name
             message: Commit message
             files: List of file paths to commit
-            
+
         Returns:
             Commit info
         """
         repo_path = self.sandbox.get_repos_path(repo_name)
-        
+
         try:
             repo = Repo(repo_path)
-            
+
             # Add files
             for file_path in files:
                 repo.index.add([file_path])
-            
+
             # Commit
             commit = repo.index.commit(message)
-            
+
             logger.info(f"Created commit {commit.hexsha[:8]} in {repo_name}")
-            
+
             return {
                 "commit_sha": commit.hexsha,
                 "message": message,
                 "files": files,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to create commit: {e}")
             raise GitHubError(f"Failed to create commit: {str(e)}")
@@ -467,20 +495,20 @@ class GitHubDevinTool:
     ) -> dict[str, Any]:
         """
         Create pull request on GitHub.
-        
+
         Args:
             repo_full_name: Repository full name (owner/repo)
             title: PR title
             body: PR description
             head_branch: Source branch
             base_branch: Target branch
-            
+
         Returns:
             PR info
         """
         if not self.github:
             raise GitHubError("GitHub token not configured")
-        
+
         try:
             repo = self.github.get_repo(repo_full_name)
             pr = repo.create_pull(
@@ -489,16 +517,16 @@ class GitHubDevinTool:
                 head=head_branch,
                 base=base_branch,
             )
-            
+
             logger.info(f"Created PR #{pr.number} in {repo_full_name}")
-            
+
             return {
                 "pr_number": pr.number,
                 "pr_url": pr.html_url,
                 "title": title,
                 "state": pr.state,
             }
-            
+
         except Exception as e:
             logger.error(f"Failed to create PR: {e}")
             raise GitHubError(f"Failed to create pull request: {str(e)}")
@@ -518,7 +546,7 @@ class GitHubDevinTool:
     def _chunk_code_file(self, content: str, file_path: str) -> list[str]:
         """
         Chunk code file by logical units (functions, classes).
-        
+
         Simple heuristic: split by blank lines and group into chunks.
         """
         lines = content.split("\n")
@@ -526,11 +554,11 @@ class GitHubDevinTool:
         current_chunk = []
         current_size = 0
         max_chunk_size = 1000  # characters
-        
+
         for line in lines:
             current_chunk.append(line)
             current_size += len(line) + 1
-            
+
             # Split on blank lines or when chunk is large enough
             if (not line.strip() and current_size > 200) or current_size > max_chunk_size:
                 if current_chunk:
@@ -539,11 +567,11 @@ class GitHubDevinTool:
                         chunks.append(chunk_text)
                 current_chunk = []
                 current_size = 0
-        
+
         # Add remaining chunk
         if current_chunk:
             chunk_text = "\n".join(current_chunk).strip()
             if chunk_text:
                 chunks.append(chunk_text)
-        
+
         return chunks if chunks else [content]
