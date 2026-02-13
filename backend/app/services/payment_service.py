@@ -103,7 +103,9 @@ class PaymentService:
         payment = Payment(
             user_id=user_id,
             product_id=product_id,
+            plan=product_id,  # Use product_id as plan name
             amount_stars=product["stars"],
+            stars_amount=product["stars"],  # Duplicate for compatibility
             credits_granted=product["credits"],
             telegram_payment_charge_id=telegram_payment_charge_id,
             provider_payment_charge_id=provider_payment_charge_id,
@@ -135,13 +137,31 @@ class PaymentService:
             user: User instance
             product: Product dict
         """
+        from datetime import datetime, timedelta, timezone
+
         # Grant credits
         user.credits_balance += product["credits"]
 
         # Upgrade role if FULL_ACCESS purchase
-        if product.get("duration_days", 0) > 0:
+        duration_days = product.get("duration_days", 0)
+        if duration_days > 0:
             user.role = "FULL_ACCESS"
             user.authorized = True
+
+            # Check if user has active subscription and extend it
+            now = datetime.now(timezone.utc)
+            if user.subscription_expires_at and user.subscription_expires_at > now:
+                # Extend existing subscription
+                user.subscription_expires_at += timedelta(days=duration_days)
+                logger.info(
+                    f"Extended subscription for user {user.telegram_id} by {duration_days} days"
+                )
+            else:
+                # Create new subscription
+                user.subscription_expires_at = now + timedelta(days=duration_days)
+                logger.info(
+                    f"Created new subscription for user {user.telegram_id} for {duration_days} days"
+                )
 
         logger.info(
             f"Applied benefits: user={user.telegram_id}, credits={product['credits']}, role={user.role}"

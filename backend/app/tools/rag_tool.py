@@ -244,13 +244,50 @@ class RAGTool:
                 return await f.read()
 
         elif file_ext == ".pdf":
-            # PDF extraction (placeholder - requires pypdf or similar)
-            # For now, return placeholder
-            return "[PDF content extraction not implemented - install pypdf]"
+            # PDF extraction using pypdf
+            try:
+                from pypdf import PdfReader
+
+                reader = PdfReader(file_path)
+                text_parts = []
+                for page in reader.pages:
+                    text_parts.append(page.extract_text())
+                return "\n".join(text_parts)
+            except ImportError:
+                logger.error("pypdf not installed, cannot extract PDF")
+                raise RAGError(
+                    "Biblioteka pypdf nie jest zainstalowana. Skontaktuj się z administratorem.",
+                    {"file_ext": file_ext},
+                )
+            except Exception as e:
+                logger.error(f"PDF extraction error: {e}", exc_info=True)
+                raise RAGError(
+                    f"Błąd ekstrakcji PDF: {str(e)}",
+                    {"file_path": file_path},
+                )
 
         elif file_ext == ".docx":
-            # DOCX extraction (placeholder - requires python-docx)
-            return "[DOCX content extraction not implemented - install python-docx]"
+            # DOCX extraction using python-docx
+            try:
+                from docx import Document
+
+                doc = Document(file_path)
+                text_parts = []
+                for paragraph in doc.paragraphs:
+                    text_parts.append(paragraph.text)
+                return "\n".join(text_parts)
+            except ImportError:
+                logger.error("python-docx not installed, cannot extract DOCX")
+                raise RAGError(
+                    "Biblioteka python-docx nie jest zainstalowana. Skontaktuj się z administratorem.",
+                    {"file_ext": file_ext},
+                )
+            except Exception as e:
+                logger.error(f"DOCX extraction error: {e}", exc_info=True)
+                raise RAGError(
+                    f"Błąd ekstrakcji DOCX: {str(e)}",
+                    {"file_path": file_path},
+                )
 
         else:
             raise RAGError(f"Unsupported file type: {file_ext}")

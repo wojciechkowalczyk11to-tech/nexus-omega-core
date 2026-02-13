@@ -207,7 +207,13 @@ class ProviderFactory:
         # All providers failed
         from app.core.exceptions import AllProvidersFailedError
 
-        raise AllProvidersFailedError(
-            providers_tried=provider_chain,
-            last_error=str(last_error) if last_error else "Unknown error",
-        )
+        # Build attempts list for exception
+        attempts = [
+            {
+                "provider": provider,
+                "error": str(last_error) if last_error else "Unknown error",
+            }
+            for provider in provider_chain
+        ]
+
+        raise AllProvidersFailedError(attempts=attempts)

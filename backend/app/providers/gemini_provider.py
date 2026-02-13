@@ -1,11 +1,10 @@
-"""
-Google Gemini provider implementation.
-"""
+"""Google Gemini provider implementation."""
 
+import asyncio
 import time
 from typing import Any
 
-import google.generativeai as genai
+import google.generativeai as genaiai
 
 from app.core.exceptions import ProviderError
 from app.core.logging_config import get_logger
@@ -66,9 +65,14 @@ class GeminiProvider(BaseProvider):
                 max_output_tokens=max_tokens,
             )
 
-            response = model_instance.generate_content(
-                gemini_messages,
-                generation_config=generation_config,
+            # Run synchronous generate_content in executor to avoid blocking event loop
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: model_instance.generate_content(
+                    gemini_messages,
+                    generation_config=generation_config,
+                ),
             )
 
             # Extract response

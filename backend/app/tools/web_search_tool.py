@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
-from app.core.exceptions import ToolError
+from app.core.exceptions import ToolExecutionError
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -86,13 +86,15 @@ class WebSearchTool:
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Web search HTTP error: {e.response.status_code}")
-            raise ToolError(
+            raise ToolExecutionError(
+                "web_search",
                 f"Web search failed: HTTP {e.response.status_code}",
-                {"query": query, "tool": "web_search"},
+                {"query": query},
             )
         except Exception as e:
             logger.error(f"Web search error: {e}", exc_info=True)
-            raise ToolError(
+            raise ToolExecutionError(
+                "web_search",
                 f"Web search failed: {str(e)}",
-                {"query": query, "tool": "web_search"},
+                {"query": query},
             )

@@ -34,10 +34,16 @@ class Payment(Base):
         index=True,
     )
 
-    # Plan details
+    # Product/Plan details
+    product_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     plan: Mapped[str] = mapped_column(String(50), nullable=False)  # starter, pro, ultra, enterprise
-    stars_amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount_stars: Mapped[int] = mapped_column(Integer, nullable=False)
+    stars_amount: Mapped[int] = mapped_column(Integer, nullable=False)  # Alias for compatibility
+    credits_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="XTR", nullable=False)
+
+    # Provider payment details
+    provider_payment_charge_id: Mapped[str] = mapped_column(String(255), nullable=True)
 
     # Status tracking
     status: Mapped[str] = mapped_column(

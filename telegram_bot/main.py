@@ -12,7 +12,7 @@ from telegram.ext import (
 )
 
 from telegram_bot.config import settings
-from telegram_bot.handlers.chat_handler import chat_message
+from telegram_bot.handlers.chat_handler_streaming import chat_message_streaming
 from telegram_bot.handlers.document_handler import document_handler
 from telegram_bot.handlers.help_handler import help_command
 from telegram_bot.handlers.mode_handler import mode_command
@@ -63,7 +63,7 @@ def main() -> None:
         MessageHandler(filters.Document.ALL, document_handler)
     )
     application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message)
+        MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message_streaming)
     )
 
     # Start polling

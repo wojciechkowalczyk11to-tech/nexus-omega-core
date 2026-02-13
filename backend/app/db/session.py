@@ -4,6 +4,7 @@ Async database session management with connection pooling.
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -64,7 +65,7 @@ async def init_db() -> None:
     try:
         async with engine.begin() as conn:
             # Test connection
-            await conn.execute("SELECT 1")
+            await conn.execute(text("SELECT 1"))
         logger.info("Database connection established successfully")
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")

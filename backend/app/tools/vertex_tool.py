@@ -7,7 +7,7 @@ from typing import Any
 from google.cloud import discoveryengine_v1 as discoveryengine
 
 from app.core.config import settings
-from app.core.exceptions import ToolError
+from app.core.exceptions import ToolExecutionError
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -30,9 +30,9 @@ class VertexSearchTool:
             location: GCP location
             data_store_id: Vertex AI Search data store ID
         """
-        self.project_id = project_id or settings.gcp_project_id
+        self.project_id = project_id or settings.vertex_project_id
         self.location = location
-        self.data_store_id = data_store_id or settings.vertex_datastore_id
+        self.data_store_id = data_store_id or settings.vertex_search_datastore_id
 
         if not self.project_id or not self.data_store_id:
             logger.warning("Vertex AI Search not configured (missing project_id or data_store_id)")
@@ -118,9 +118,10 @@ class VertexSearchTool:
 
         except Exception as e:
             logger.error(f"Vertex AI Search error: {e}", exc_info=True)
-            raise ToolError(
+            raise ToolExecutionError(
+                "vertex",
                 f"Vertex AI Search failed: {str(e)}",
-                {"query": query, "tool": "vertex"},
+                {"query": query},
             )
 
     def format_citations(self, results: list[dict[str, Any]]) -> str:

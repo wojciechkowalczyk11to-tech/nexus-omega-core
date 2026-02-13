@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     vertex_location: str = Field(default="us-central1", description="Vertex AI location")
     vertex_search_datastore_id: str = Field(default="", description="Vertex AI Search datastore ID")
 
+    # === Web Search ===
+    brave_search_api_key: str = Field(default="", description="Brave Search API key")
+
     # === GitHub (Devin-mode) ===
     github_app_id: str = Field(default="", description="GitHub App ID")
     github_private_key_path: str = Field(default="", description="Path to GitHub private key")
