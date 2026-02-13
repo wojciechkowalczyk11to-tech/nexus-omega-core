@@ -24,7 +24,7 @@ class ClaudeProvider(BaseProvider):
         "deep": "claude-3-5-sonnet-20241022",
     }
 
-    # Pricing per 1M tokens (USD)
+    # Pricing per 1M tokens (USD )
     PRICING = {
         "claude-3-5-haiku-20241022": {"input": 0.8, "output": 4.0},
         "claude-3-5-sonnet-20241022": {"input": 3.0, "output": 15.0},
@@ -106,15 +106,13 @@ class ClaudeProvider(BaseProvider):
             raise ProviderError(
                 f"Claude generation failed: {str(e)}",
                 {"provider": "claude", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get Claude model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for Claude request."""
         pricing = self.PRICING.get(model, {"input": 3.0, "output": 15.0})
 

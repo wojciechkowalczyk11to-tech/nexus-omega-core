@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class AgentTrace(Base):
     """
     Agent trace model for storing reasoning steps.
-    
+
     Stores the complete thought process of the agent for a given message,
     including reasoning, actions, observations, and tool calls.
     """
@@ -32,7 +32,7 @@ class AgentTrace(Base):
         nullable=False,
         index=True,
     )
-    
+
     message_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("messages.id", ondelete="CASCADE"),
@@ -42,16 +42,18 @@ class AgentTrace(Base):
 
     # Trace data
     iteration: Mapped[int] = mapped_column(Integer, nullable=False)
-    action: Mapped[str] = mapped_column(String(50), nullable=False)  # think, use_tool, respond, self_correct
+    action: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # think, use_tool, respond, self_correct
     thought: Mapped[str | None] = mapped_column(Text, nullable=True)
     tool_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     tool_args: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     tool_result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     correction_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    
+
     # Timing
     timestamp_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    
+
     # Relationships
     user: Mapped["User"] = relationship("User")
     message: Mapped["Message"] = relationship("Message", back_populates="agent_traces")

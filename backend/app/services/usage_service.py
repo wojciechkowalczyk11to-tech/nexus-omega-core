@@ -2,13 +2,12 @@
 Usage service for logging and tracking AI usage and costs.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.ledger import UsageLedger
-from app.db.models.user import User
 
 
 class UsageService:
@@ -73,9 +72,7 @@ class UsageService:
 
         return ledger_entry
 
-    async def get_summary(
-        self, user_id: int, days: int = 30
-    ) -> dict[str, int | float]:
+    async def get_summary(self, user_id: int, days: int = 30) -> dict[str, int | float]:
         """
         Get usage summary for a user.
 
@@ -86,7 +83,7 @@ class UsageService:
         Returns:
             Summary dict with totals
         """
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         result = await self.db.execute(
             select(
@@ -95,9 +92,7 @@ class UsageService:
                 func.sum(UsageLedger.output_tokens).label("total_output_tokens"),
                 func.sum(UsageLedger.cost_usd).label("total_cost_usd"),
                 func.avg(UsageLedger.latency_ms).label("avg_latency_ms"),
-            ).where(
-                UsageLedger.user_id == user_id, UsageLedger.created_at >= cutoff_date
-            )
+            ).where(UsageLedger.user_id == user_id, UsageLedger.created_at >= cutoff_date)
         )
 
         row = result.one()
@@ -124,7 +119,7 @@ class UsageService:
         Returns:
             List of provider cost breakdowns
         """
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         result = await self.db.execute(
             select(
@@ -132,9 +127,7 @@ class UsageService:
                 func.count(UsageLedger.id).label("requests"),
                 func.sum(UsageLedger.cost_usd).label("total_cost"),
             )
-            .where(
-                UsageLedger.user_id == user_id, UsageLedger.created_at >= cutoff_date
-            )
+            .where(UsageLedger.user_id == user_id, UsageLedger.created_at >= cutoff_date)
             .group_by(UsageLedger.provider)
             .order_by(func.sum(UsageLedger.cost_usd).desc())
         )
@@ -160,9 +153,7 @@ class UsageService:
             Budget status dict
         """
         today = date.today()
-        today_start = datetime.combine(today, datetime.min.time()).replace(
-            tzinfo=timezone.utc
-        )
+        today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=UTC)
 
         result = await self.db.execute(
             select(func.sum(UsageLedger.cost_usd)).where(
@@ -176,9 +167,7 @@ class UsageService:
             "spent_today_usd": float(total_today),
             "budget_cap_usd": budget_cap,
             "remaining_usd": max(0.0, budget_cap - float(total_today)),
-            "percentage_used": (float(total_today) / budget_cap * 100)
-            if budget_cap > 0
-            else 0.0,
+            "percentage_used": (float(total_today) / budget_cap * 100) if budget_cap > 0 else 0.0,
         }
 
     async def get_leaderboard(self, limit: int = 10) -> list[dict[str, int | float]]:
@@ -211,9 +200,7 @@ class UsageService:
             for row in result.all()
         ]
 
-    async def get_recent_logs(
-        self, user_id: int, limit: int = 20
-    ) -> list[UsageLedger]:
+    async def get_recent_logs(self, user_id: int, limit: int = 20) -> list[UsageLedger]:
         """
         Get recent usage logs for a user.
 

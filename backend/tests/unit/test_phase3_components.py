@@ -12,7 +12,7 @@ Tests:
 
 import os
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,11 +75,11 @@ async def test_sandbox_path_validation():
     assert valid_path.startswith(sandbox.workspace_dir)
 
     # Path traversal attempt
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         sandbox._validate_path("../../../etc/passwd")
 
     # Forbidden path
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         sandbox._validate_path("/etc/passwd")
 
 
@@ -240,10 +240,10 @@ async def test_rag_tool_v2_chunking():
     text = """
     This is the first paragraph with some content.
     It has multiple sentences.
-    
+
     This is the second paragraph.
     It also has content.
-    
+
     This is the third paragraph.
     """
 

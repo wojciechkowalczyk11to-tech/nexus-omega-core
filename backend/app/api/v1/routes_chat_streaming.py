@@ -4,9 +4,9 @@ Streaming chat API routes with Server-Sent Events (SSE).
 
 import asyncio
 import json
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +76,7 @@ async def generate_stream_events(
 
         if response.sources:
             source_list = " ".join(
-                [f"{i+1}) {s['title']}" for i, s in enumerate(response.sources[:3])]
+                [f"{i + 1}) {s['title']}" for i, s in enumerate(response.sources[:3])]
             )
             meta_footer += f"\n📚 Źródła (Vertex): {source_list}"
 
@@ -112,7 +112,9 @@ async def chat_stream(
 
     Processes through 9-step orchestrator flow with real-time streaming.
     """
-    logger.info(f"Streaming chat request from user {current_user.telegram_id}: {request.query[:50]}...")
+    logger.info(
+        f"Streaming chat request from user {current_user.telegram_id}: {request.query[:50]}..."
+    )
 
     orchestrator = Orchestrator(db)
 

@@ -81,9 +81,7 @@ async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         # Handle specific errors
         if "403" in error_message:
-            await update.message.reply_text(
-                "⛔ Brak dostępu. Sprawdź swoją rolę: /help"
-            )
+            await update.message.reply_text("⛔ Brak dostępu. Sprawdź swoją rolę: /help")
         elif "503" in error_message:
             await update.message.reply_text(
                 "❌ Wszystkie providery AI są niedostępne. Spróbuj ponownie za chwilę."

@@ -133,7 +133,7 @@ async def register(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Błąd rejestracji: {str(e)}",
-        )
+        ) from e
 
 
 @router.post("/unlock", response_model=UnlockResponse)
@@ -161,16 +161,16 @@ async def unlock(
             authorized=user.authorized,
             message="Dostęp DEMO odblokowany pomyślnie",
         )
-    except UserNotFoundError:
+    except UserNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Użytkownik nie istnieje. Najpierw zarejestruj się.",
-        )
+        ) from e
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.post("/bootstrap", response_model=BootstrapResponse)
@@ -197,16 +197,16 @@ async def bootstrap(
             role=user.role,
             message="Administrator utworzony pomyślnie",
         )
-    except UserNotFoundError:
+    except UserNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Użytkownik nie istnieje. Najpierw zarejestruj się.",
-        )
+        ) from e
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.post("/invite", response_model=InviteResponse)
@@ -231,16 +231,16 @@ async def consume_invite(
             role=user.role,
             message=f"Kod zaproszenia wykorzystany. Nowa rola: {user.role}",
         )
-    except UserNotFoundError:
+    except UserNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Użytkownik nie istnieje",
-        )
+        ) from e
     except InvalidInviteCodeError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.get("/me", response_model=UserResponse)

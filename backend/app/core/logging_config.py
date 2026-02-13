@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import settings
@@ -22,7 +22,7 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -53,7 +53,7 @@ class PlainFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as plain text."""
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         message = record.getMessage()
 
         # Add context if available
@@ -85,10 +85,7 @@ def setup_logging() -> None:
     handler = logging.StreamHandler(sys.stdout)
 
     # Choose formatter based on settings
-    if settings.log_json:
-        formatter = JSONFormatter()
-    else:
-        formatter = PlainFormatter()
+    formatter = JSONFormatter() if settings.log_json else PlainFormatter()
 
     handler.setFormatter(formatter)
 

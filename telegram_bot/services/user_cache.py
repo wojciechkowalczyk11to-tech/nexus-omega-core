@@ -40,9 +40,7 @@ class UserCache:
         key = f"user_token:{telegram_id}"
         return await self.redis.get(key)
 
-    async def set_user_token(
-        self, telegram_id: int, token: str, ttl: int = 86400
-    ) -> None:
+    async def set_user_token(self, telegram_id: int, token: str, ttl: int = 86400) -> None:
         """
         Cache JWT token for user.
 
@@ -106,9 +104,7 @@ class UserCache:
         key = f"user_mode:{telegram_id}"
         await self.redis.set(key, mode)
 
-    async def increment_rate_limit(
-        self, telegram_id: int, window: int = 60
-    ) -> int:
+    async def increment_rate_limit(self, telegram_id: int, window: int = 60) -> int:
         """
         Increment rate limit counter.
 

@@ -2,7 +2,7 @@
 Memory manager for sessions, snapshots, and absolute user memory.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,7 +45,7 @@ class MemoryManager:
         # Try to get active session
         result = await self.db.execute(
             select(ChatSession)
-            .where(ChatSession.user_id == user_id, ChatSession.active == True)
+            .where(ChatSession.user_id == user_id, ChatSession.active)
             .order_by(ChatSession.updated_at.desc())
         )
         session = result.scalar_one_or_none()
@@ -81,9 +81,7 @@ class MemoryManager:
         Raises:
             SessionNotFoundError: If session not found
         """
-        result = await self.db.execute(
-            select(ChatSession).where(ChatSession.id == session_id)
-        )
+        result = await self.db.execute(select(ChatSession).where(ChatSession.id == session_id))
         session = result.scalar_one_or_none()
 
         if not session:
@@ -180,7 +178,7 @@ class MemoryManager:
         await self.db.refresh(message)
         return message
 
-    async def maybe_create_snapshot(self, session_id: int, llm_provider = None) -> bool:
+    async def maybe_create_snapshot(self, session_id: int, llm_provider=None) -> bool:
         """
         Create snapshot if message threshold reached.
 
@@ -223,7 +221,7 @@ class MemoryManager:
 
         # Update session snapshot
         session.snapshot_text = snapshot_text
-        session.snapshot_at = datetime.now(timezone.utc)
+        session.snapshot_at = datetime.now(UTC)
         await self.db.flush()
 
         return True
@@ -247,6 +245,7 @@ class MemoryManager:
             Compressed summary text
         """
         from app.core.logging_config import get_logger
+
         logger = get_logger(__name__)
 
         # Build conversation text
@@ -298,9 +297,7 @@ Podsumowanie:"""
             Memory value or None if not found
         """
         result = await self.db.execute(
-            select(UserMemory).where(
-                UserMemory.user_id == user_id, UserMemory.key == key
-            )
+            select(UserMemory).where(UserMemory.user_id == user_id, UserMemory.key == key)
         )
         memory = result.scalar_one_or_none()
 
@@ -320,9 +317,7 @@ Podsumowanie:"""
         """
         # Try to get existing memory
         result = await self.db.execute(
-            select(UserMemory).where(
-                UserMemory.user_id == user_id, UserMemory.key == key
-            )
+            select(UserMemory).where(UserMemory.user_id == user_id, UserMemory.key == key)
         )
         memory = result.scalar_one_or_none()
 
@@ -351,9 +346,7 @@ Podsumowanie:"""
             True if deleted, False if not found
         """
         result = await self.db.execute(
-            select(UserMemory).where(
-                UserMemory.user_id == user_id, UserMemory.key == key
-            )
+            select(UserMemory).where(UserMemory.user_id == user_id, UserMemory.key == key)
         )
         memory = result.scalar_one_or_none()
 
@@ -376,15 +369,11 @@ Podsumowanie:"""
             List of UserMemory instances
         """
         result = await self.db.execute(
-            select(UserMemory)
-            .where(UserMemory.user_id == user_id)
-            .order_by(UserMemory.key)
+            select(UserMemory).where(UserMemory.user_id == user_id).order_by(UserMemory.key)
         )
         return list(result.scalars().all())
 
-    async def list_sessions(
-        self, user_id: int, active_only: bool = False
-    ) -> list[ChatSession]:
+    async def list_sessions(self, user_id: int, active_only: bool = False) -> list[ChatSession]:
         """
         List sessions for a user.
 
@@ -398,7 +387,7 @@ Podsumowanie:"""
         query = select(ChatSession).where(ChatSession.user_id == user_id)
 
         if active_only:
-            query = query.where(ChatSession.active == True)
+            query = query.where(ChatSession.active)
 
         result = await self.db.execute(query.order_by(ChatSession.updated_at.desc()))
         return list(result.scalars().all())

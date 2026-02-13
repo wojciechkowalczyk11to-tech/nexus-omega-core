@@ -2,12 +2,11 @@
 SQLAlchemy declarative base for all models.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 
 # Naming convention for constraints
 NAMING_CONVENTION = {
@@ -29,18 +28,15 @@ class Base(DeclarativeBase):
     # Common columns for all models
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert model instance to dictionary."""
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
-        }
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}

@@ -3,6 +3,7 @@ Celery background tasks.
 """
 
 import asyncio
+from datetime import UTC
 from typing import Any
 
 from app.core.logging_config import get_logger
@@ -23,7 +24,7 @@ def cleanup_old_sessions() -> dict[str, Any]:
 
     try:
         # Import here to avoid circular imports
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
         from sqlalchemy import delete
 
@@ -31,7 +32,7 @@ def cleanup_old_sessions() -> dict[str, Any]:
         from app.db.session import async_session_maker
 
         async def _cleanup() -> int:
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+            cutoff_date = datetime.now(UTC) - timedelta(days=30)
 
             async with async_session_maker() as session:
                 result = await session.execute(
@@ -74,7 +75,7 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
     logger.info(f"Generating usage report for user {user_id}, period={period_days} days")
 
     try:
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
         from sqlalchemy import func, select
 
@@ -82,7 +83,7 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
         from app.db.session import async_session_maker
 
         async def _generate() -> dict[str, Any]:
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=period_days)
+            cutoff_date = datetime.now(UTC) - timedelta(days=period_days)
 
             async with async_session_maker() as session:
                 # Get usage stats

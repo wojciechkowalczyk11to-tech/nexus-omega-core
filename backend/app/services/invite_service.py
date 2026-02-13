@@ -3,7 +3,7 @@ Invite code service for managing user invitations.
 """
 
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,16 +70,14 @@ class InviteService:
         Raises:
             InvalidInviteCodeError: If code is invalid, expired, or exhausted
         """
-        result = await self.db.execute(
-            select(InviteCode).where(InviteCode.code_hash == code_hash)
-        )
+        result = await self.db.execute(select(InviteCode).where(InviteCode.code_hash == code_hash))
         invite = result.scalar_one_or_none()
 
         if not invite:
             raise InvalidInviteCodeError("Kod zaproszenia nie istnieje")
 
         # Check expiration
-        if invite.expires_at and invite.expires_at < datetime.now(timezone.utc):
+        if invite.expires_at and invite.expires_at < datetime.now(UTC):
             raise InvalidInviteCodeError("Kod zaproszenia wygasł")
 
         # Check uses
@@ -110,7 +108,7 @@ class InviteService:
         # Set consumption details if first use
         if invite.consumed_by is None:
             invite.consumed_by = consumed_by
-            invite.consumed_at = datetime.now(timezone.utc)
+            invite.consumed_at = datetime.now(UTC)
 
         await self.db.flush()
         await self.db.refresh(invite)
@@ -148,9 +146,7 @@ class InviteService:
         Raises:
             InvalidInviteCodeError: If code not found
         """
-        result = await self.db.execute(
-            select(InviteCode).where(InviteCode.code_hash == code_hash)
-        )
+        result = await self.db.execute(select(InviteCode).where(InviteCode.code_hash == code_hash))
         invite = result.scalar_one_or_none()
 
         if not invite:

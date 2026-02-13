@@ -35,7 +35,7 @@ from app.core.exceptions import AllProvidersFailedError, PolicyDeniedError, Prov
 from app.core.logging_config import get_logger
 from app.db.models.user import User
 from app.services.memory_manager import MemoryManager
-from app.services.model_router import ModelRouter, Profile, DifficultyLevel
+from app.services.model_router import ModelRouter, Profile
 from app.services.policy_engine import PolicyEngine
 from app.services.token_budget_manager import (
     BudgetReport,
@@ -45,7 +45,7 @@ from app.services.token_budget_manager import (
     TokenCounter,
 )
 from app.services.usage_service import UsageService
-from app.tools.tool_registry import ToolRegistry, ToolResult, create_default_tools
+from app.tools.tool_registry import ToolResult, create_default_tools
 
 logger = get_logger(__name__)
 
@@ -54,13 +54,14 @@ logger = get_logger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-MAX_REACT_ITERATIONS = 6       # Maximum tool-use loops
-MAX_SELF_CORRECTIONS = 2       # Maximum self-correction attempts per iteration
-TOOL_CALL_FINISH = "tool_calls" # finish_reason indicating tool call
+MAX_REACT_ITERATIONS = 6  # Maximum tool-use loops
+MAX_SELF_CORRECTIONS = 2  # Maximum self-correction attempts per iteration
+TOOL_CALL_FINISH = "tool_calls"  # finish_reason indicating tool call
 
 
 class AgentAction(str, Enum):
     """Possible actions in the ReAct loop."""
+
     THINK = "think"
     USE_TOOL = "use_tool"
     RESPOND = "respond"
@@ -71,9 +72,11 @@ class AgentAction(str, Enum):
 # Data models
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ThoughtStep:
     """Single step in the agent's reasoning chain."""
+
     iteration: int
     action: AgentAction
     thought: str = ""
@@ -87,6 +90,7 @@ class ThoughtStep:
 @dataclass
 class OrchestratorRequest:
     """Request to the orchestrator."""
+
     user: User
     query: str
     session_id: int | None = None
@@ -98,6 +102,7 @@ class OrchestratorRequest:
 @dataclass
 class OrchestratorResponse:
     """Response from the orchestrator."""
+
     content: str
     provider: str
     model: str
@@ -146,6 +151,7 @@ REACT_SYSTEM_PROMPT = """Jesteś NexusOmegaCore — zaawansowanym agentem AI z d
 # ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
+
 
 class Orchestrator:
     """
@@ -230,23 +236,25 @@ class Orchestrator:
         )
 
         # Check DEEP confirmation
-        if self.model_router.needs_confirmation(profile, request.user.role):
-            if not request.deep_confirmed:
-                return OrchestratorResponse(
-                    content="",
-                    provider="",
-                    model="",
-                    profile=profile.value,
-                    difficulty=difficulty.value,
-                    cost_usd=0.0,
-                    latency_ms=0,
-                    input_tokens=0,
-                    output_tokens=0,
-                    fallback_used=False,
-                    needs_confirmation=True,
-                    session_id=session.id,
-                    trace_id=trace_id,
-                )
+        if (
+            self.model_router.needs_confirmation(profile, request.user.role)
+            and not request.deep_confirmed
+        ):
+            return OrchestratorResponse(
+                content="",
+                provider="",
+                model="",
+                profile=profile.value,
+                difficulty=difficulty.value,
+                cost_usd=0.0,
+                latency_ms=0,
+                input_tokens=0,
+                output_tokens=0,
+                fallback_used=False,
+                needs_confirmation=True,
+                session_id=session.id,
+                trace_id=trace_id,
+            )
 
         # =====================================================================
         # STEP 4: Build initial context with token budgeting
@@ -258,6 +266,7 @@ class Orchestrator:
         primary_provider = provider_chain[0]
 
         from app.providers.factory import ProviderFactory
+
         try:
             provider_instance = ProviderFactory.create(primary_provider)
             model_name = provider_instance.get_model_for_profile(profile.value)
@@ -331,12 +340,14 @@ class Orchestrator:
             if not tool_calls:
                 # No tool calls — LLM is responding directly
                 response_content = llm_response.content
-                reasoning_steps.append(ThoughtStep(
-                    iteration=iteration,
-                    action=AgentAction.RESPOND,
-                    thought="Odpowiedź bezpośrednia — brak potrzeby użycia narzędzi.",
-                    timestamp_ms=int((time.time() - step_start) * 1000),
-                ))
+                reasoning_steps.append(
+                    ThoughtStep(
+                        iteration=iteration,
+                        action=AgentAction.RESPOND,
+                        thought="Odpowiedź bezpośrednia — brak potrzeby użycia narzędzi.",
+                        timestamp_ms=int((time.time() - step_start) * 1000),
+                    )
+                )
                 logger.info(f"[{trace_id}] LLM responded directly (no tool calls)")
                 break
 
@@ -344,9 +355,11 @@ class Orchestrator:
             for tc in tool_calls:
                 tool_name = tc.get("name", "")
                 tool_args = tc.get("arguments", {})
-                tool_call_id = tc.get("id", "")
+                tc.get("id", "")
 
-                logger.info(f"[{trace_id}] Tool call: {tool_name}({json.dumps(tool_args, ensure_ascii=False)[:200]})")
+                logger.info(
+                    f"[{trace_id}] Tool call: {tool_name}({json.dumps(tool_args, ensure_ascii=False)[:200]})"
+                )
 
                 # Record thought step
                 thought_step = ThoughtStep(
@@ -376,34 +389,42 @@ class Orchestrator:
                 result_content = tool_result.to_message_content()
 
                 # Add assistant's tool call message
-                context_messages.append({
-                    "role": "assistant",
-                    "content": f"[Wywołuję narzędzie: {tool_name}]",
-                })
+                context_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"[Wywołuję narzędzie: {tool_name}]",
+                    }
+                )
 
                 # Add tool result as observation
                 if tool_result.success:
-                    context_messages.append({
-                        "role": "system",
-                        "content": f"[Wynik narzędzia {tool_name}]:\n{result_content}",
-                    })
+                    context_messages.append(
+                        {
+                            "role": "system",
+                            "content": f"[Wynik narzędzia {tool_name}]:\n{result_content}",
+                        }
+                    )
                 else:
                     # --- SELF-CORRECTION: Tool failed ---
-                    context_messages.append({
-                        "role": "system",
-                        "content": (
-                            f"[BŁĄD narzędzia {tool_name}]: {result_content}\n"
-                            f"Spróbuj innego podejścia lub odpowiedz na podstawie dostępnej wiedzy."
-                        ),
-                    })
+                    context_messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                f"[BŁĄD narzędzia {tool_name}]: {result_content}\n"
+                                f"Spróbuj innego podejścia lub odpowiedz na podstawie dostępnej wiedzy."
+                            ),
+                        }
+                    )
 
-                    reasoning_steps.append(ThoughtStep(
-                        iteration=iteration,
-                        action=AgentAction.SELF_CORRECT,
-                        thought=f"Narzędzie '{tool_name}' zwróciło błąd. Szukam alternatywnego podejścia.",
-                        correction_reason=tool_result.error,
-                        timestamp_ms=int((time.time() - step_start) * 1000),
-                    ))
+                    reasoning_steps.append(
+                        ThoughtStep(
+                            iteration=iteration,
+                            action=AgentAction.SELF_CORRECT,
+                            thought=f"Narzędzie '{tool_name}' zwróciło błąd. Szukam alternatywnego podejścia.",
+                            correction_reason=tool_result.error,
+                            timestamp_ms=int((time.time() - step_start) * 1000),
+                        )
+                    )
 
                     logger.warning(
                         f"[{trace_id}] Self-correction triggered: tool '{tool_name}' failed. "
@@ -428,22 +449,21 @@ class Orchestrator:
                     elif msg["role"] == "user" and i == len(context_messages) - 1:
                         priority = MessagePriority.CURRENT_QUERY
                         truncatable = False
-                    elif msg["role"] == "user":
-                        priority = MessagePriority.HISTORY_RECENT
-                        truncatable = True
-                    elif msg["role"] == "assistant":
+                    elif msg["role"] == "user" or msg["role"] == "assistant":
                         priority = MessagePriority.HISTORY_RECENT
                         truncatable = True
                     else:
                         priority = MessagePriority.SYSTEM_CONTEXT
                         truncatable = True
 
-                    reprioritized.append(PrioritizedMessage(
-                        message=msg,
-                        priority=priority,
-                        truncatable=truncatable,
-                        source=f"react_iter_{iteration}",
-                    ))
+                    reprioritized.append(
+                        PrioritizedMessage(
+                            message=msg,
+                            priority=priority,
+                            truncatable=truncatable,
+                            source=f"react_iter_{iteration}",
+                        )
+                    )
 
                 context_messages, budget_report = budget_manager.apply_budget(reprioritized)
 
@@ -452,13 +472,15 @@ class Orchestrator:
             logger.warning(f"[{trace_id}] Max ReAct iterations reached ({MAX_REACT_ITERATIONS})")
             if not response_content:
                 # Force a final response
-                context_messages.append({
-                    "role": "system",
-                    "content": (
-                        "[INSTRUKCJA SYSTEMOWA]: Osiągnięto maksymalną liczbę iteracji. "
-                        "Sformułuj najlepszą możliwą odpowiedź na podstawie zebranych informacji."
-                    ),
-                })
+                context_messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "[INSTRUKCJA SYSTEMOWA]: Osiągnięto maksymalną liczbę iteracji. "
+                            "Sformułuj najlepszą możliwą odpowiedź na podstawie zebranych informacji."
+                        ),
+                    }
+                )
                 try:
                     final_response, p_used, _ = await ProviderFactory.generate_with_fallback(
                         provider_chain=provider_chain,
@@ -504,7 +526,7 @@ class Orchestrator:
                 "profile": profile.value,
                 "difficulty": difficulty.value,
                 "cost_usd": total_cost_usd,
-                "react_iterations": iteration if 'iteration' in dir() else 0,
+                "react_iterations": iteration if "iteration" in dir() else 0,
                 "tools_used": tools_used,
                 "trace_id": trace_id,
             },
@@ -565,11 +587,11 @@ class Orchestrator:
             fallback_used=fallback_used,
             needs_confirmation=False,
             session_id=session.id,
-            sources=sources if 'sources' in dir() else None,
+            sources=sources if "sources" in dir() else None,
             reasoning_steps=reasoning_steps,
-            react_iterations=iteration if 'iteration' in dir() else 0,
+            react_iterations=iteration if "iteration" in dir() else 0,
             tools_used=tools_used,
-            budget_report=budget_report if 'budget_report' in dir() else None,
+            budget_report=budget_report if "budget_report" in dir() else None,
             trace_id=trace_id,
         )
 
@@ -598,21 +620,21 @@ class Orchestrator:
         # 2. Add user memory to system prompt
         memories = await self.memory_manager.list_absolute_memories(user_id)
         if memories:
-            memory_text = "\n".join(
-                [f"- {mem.key}: {mem.value}" for mem in memories[:5]]
-            )
+            memory_text = "\n".join([f"- {mem.key}: {mem.value}" for mem in memories[:5]])
             system_prompt += f"\n\n**Preferencje użytkownika:**\n{memory_text}"
 
         # 3. Add available tools description to system prompt
         tool_descriptions = self.tool_registry.get_tool_descriptions()
         system_prompt += f"\n\n**Dostępne narzędzia:**\n{tool_descriptions}"
 
-        prioritized.append(PrioritizedMessage(
-            message={"role": "system", "content": system_prompt},
-            priority=MessagePriority.SYSTEM_PROMPT,
-            truncatable=False,
-            source="system_prompt",
-        ))
+        prioritized.append(
+            PrioritizedMessage(
+                message={"role": "system", "content": system_prompt},
+                priority=MessagePriority.SYSTEM_PROMPT,
+                truncatable=False,
+                source="system_prompt",
+            )
+        )
 
         # 4. Session history (snapshot + recent messages)
         history_messages = await self.memory_manager.get_context_messages(session_id)
@@ -621,31 +643,37 @@ class Orchestrator:
             is_snapshot = "[Podsumowanie poprzedniej konwersacji]" in content
 
             if is_snapshot:
-                prioritized.append(PrioritizedMessage(
-                    message=msg,
-                    priority=MessagePriority.SNAPSHOT,
-                    truncatable=True,
-                    min_tokens=100,
-                    source="snapshot",
-                ))
+                prioritized.append(
+                    PrioritizedMessage(
+                        message=msg,
+                        priority=MessagePriority.SNAPSHOT,
+                        truncatable=True,
+                        min_tokens=100,
+                        source="snapshot",
+                    )
+                )
             else:
                 # More recent messages get higher priority
                 recency_boost = min(i * 2, 10)
-                prioritized.append(PrioritizedMessage(
-                    message=msg,
-                    priority=MessagePriority.HISTORY_OLD + recency_boost,
-                    truncatable=True,
-                    min_tokens=30,
-                    source=f"history_{i}",
-                ))
+                prioritized.append(
+                    PrioritizedMessage(
+                        message=msg,
+                        priority=MessagePriority.HISTORY_OLD + recency_boost,
+                        truncatable=True,
+                        min_tokens=30,
+                        source=f"history_{i}",
+                    )
+                )
 
         # 5. Current user query (highest priority, never truncated)
-        prioritized.append(PrioritizedMessage(
-            message={"role": "user", "content": query},
-            priority=MessagePriority.CURRENT_QUERY,
-            truncatable=False,
-            source="current_query",
-        ))
+        prioritized.append(
+            PrioritizedMessage(
+                message={"role": "user", "content": query},
+                priority=MessagePriority.CURRENT_QUERY,
+                truncatable=False,
+                source="current_query",
+            )
+        )
 
         return prioritized, sources
 
@@ -666,14 +694,15 @@ class Orchestrator:
             Tuple of (ProviderResponse, provider_name, fallback_used)
         """
         from app.providers.factory import ProviderFactory
-        from app.providers.base import ProviderResponse
 
         last_error = None
         fallback_used = False
 
         for i, prov_name in enumerate(provider_chain):
             try:
-                logger.info(f"Trying provider with tools: {prov_name} (attempt {i+1}/{len(provider_chain)})")
+                logger.info(
+                    f"Trying provider with tools: {prov_name} (attempt {i + 1}/{len(provider_chain)})"
+                )
 
                 provider = ProviderFactory.create(prov_name)
                 model = provider.get_model_for_profile(profile)
@@ -729,7 +758,6 @@ class Orchestrator:
 
         Falls back to standard generation if tools are empty or unsupported.
         """
-        from app.providers.base import ProviderResponse
 
         if not tools:
             # No tools available — standard generation
@@ -742,17 +770,11 @@ class Orchestrator:
 
         # Provider-specific tool calling
         if provider_name in ("openai", "deepseek", "groq", "grok", "openrouter"):
-            return await self._openai_style_tool_call(
-                provider, model, messages, tools
-            )
+            return await self._openai_style_tool_call(provider, model, messages, tools)
         elif provider_name == "claude":
-            return await self._claude_tool_call(
-                provider, model, messages, tools
-            )
+            return await self._claude_tool_call(provider, model, messages, tools)
         elif provider_name == "gemini":
-            return await self._gemini_tool_call(
-                provider, model, messages, tools
-            )
+            return await self._gemini_tool_call(provider, model, messages, tools)
         else:
             # Unknown provider — standard generation
             return await provider.generate(
@@ -776,9 +798,12 @@ class Orchestrator:
 
         try:
             # Use the provider's client directly for tool calling
-            if not hasattr(provider, 'client') or provider.client is None:
+            if not hasattr(provider, "client") or provider.client is None:
                 return await provider.generate(
-                    messages=messages, model=model, temperature=0.7, max_tokens=2048,
+                    messages=messages,
+                    model=model,
+                    temperature=0.7,
+                    max_tokens=2048,
                 )
 
             response = await provider.client.chat.completions.create(
@@ -805,7 +830,9 @@ class Orchestrator:
                     {
                         "id": tc.id,
                         "name": tc.function.name,
-                        "arguments": json.loads(tc.function.arguments) if tc.function.arguments else {},
+                        "arguments": json.loads(tc.function.arguments)
+                        if tc.function.arguments
+                        else {},
                     }
                     for tc in choice.message.tool_calls
                 ]
@@ -824,7 +851,10 @@ class Orchestrator:
         except Exception as e:
             logger.warning(f"OpenAI-style tool call failed, falling back to standard: {e}")
             return await provider.generate(
-                messages=messages, model=model, temperature=0.7, max_tokens=2048,
+                messages=messages,
+                model=model,
+                temperature=0.7,
+                max_tokens=2048,
             )
 
     async def _claude_tool_call(
@@ -840,9 +870,12 @@ class Orchestrator:
         start_time = time.time()
 
         try:
-            if not hasattr(provider, 'client') or provider.client is None:
+            if not hasattr(provider, "client") or provider.client is None:
                 return await provider.generate(
-                    messages=messages, model=model, temperature=0.7, max_tokens=2048,
+                    messages=messages,
+                    model=model,
+                    temperature=0.7,
+                    max_tokens=2048,
                 )
 
             # Extract system message for Claude
@@ -877,11 +910,13 @@ class Orchestrator:
                 if block.type == "text":
                     content += block.text
                 elif block.type == "tool_use":
-                    tool_calls_data.append({
-                        "id": block.id,
-                        "name": block.name,
-                        "arguments": block.input,
-                    })
+                    tool_calls_data.append(
+                        {
+                            "id": block.id,
+                            "name": block.name,
+                            "arguments": block.input,
+                        }
+                    )
 
             input_tokens = response.usage.input_tokens
             output_tokens = response.usage.output_tokens
@@ -905,7 +940,10 @@ class Orchestrator:
         except Exception as e:
             logger.warning(f"Claude tool call failed, falling back to standard: {e}")
             return await provider.generate(
-                messages=messages, model=model, temperature=0.7, max_tokens=2048,
+                messages=messages,
+                model=model,
+                temperature=0.7,
+                max_tokens=2048,
             )
 
     async def _gemini_tool_call(
@@ -916,8 +954,9 @@ class Orchestrator:
         tools: list[dict[str, Any]],
     ) -> Any:
         """Handle Gemini function calling."""
-        from app.providers.base import ProviderResponse
         import asyncio
+
+        from app.providers.base import ProviderResponse
 
         start_time = time.time()
 
@@ -944,7 +983,9 @@ class Orchestrator:
                                     ),
                                     description=pdef.get("description", ""),
                                 )
-                                for pname, pdef in t.get("parameters", {}).get("properties", {}).items()
+                                for pname, pdef in t.get("parameters", {})
+                                .get("properties", {})
+                                .items()
                             },
                             required=t.get("parameters", {}).get("required", []),
                         ),
@@ -978,15 +1019,17 @@ class Orchestrator:
 
             for candidate in response.candidates:
                 for part in candidate.content.parts:
-                    if hasattr(part, 'text') and part.text:
+                    if hasattr(part, "text") and part.text:
                         content += part.text
-                    if hasattr(part, 'function_call') and part.function_call:
+                    if hasattr(part, "function_call") and part.function_call:
                         fc = part.function_call
-                        tool_calls_data.append({
-                            "id": f"gemini_{fc.name}",
-                            "name": fc.name,
-                            "arguments": dict(fc.args) if fc.args else {},
-                        })
+                        tool_calls_data.append(
+                            {
+                                "id": f"gemini_{fc.name}",
+                                "name": fc.name,
+                                "arguments": dict(fc.args) if fc.args else {},
+                            }
+                        )
 
             # Token counts
             try:
@@ -1017,7 +1060,10 @@ class Orchestrator:
         except Exception as e:
             logger.warning(f"Gemini tool call failed, falling back to standard: {e}")
             return await provider.generate(
-                messages=messages, model=model, temperature=0.7, max_tokens=2048,
+                messages=messages,
+                model=model,
+                temperature=0.7,
+                max_tokens=2048,
             )
 
     def _extract_tool_calls(self, response: Any) -> list[dict[str, Any]]:
@@ -1043,6 +1089,6 @@ class Orchestrator:
         finish_reason = raw.get("finish_reason", response.finish_reason)
         if finish_reason in ("tool_calls", "tool_use", "function_call"):
             # Tool call indicated but not in expected format
-            logger.warning(f"Tool call finish_reason but no tool_calls in response")
+            logger.warning("Tool call finish_reason but no tool_calls in response")
 
         return []

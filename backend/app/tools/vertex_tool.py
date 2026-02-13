@@ -53,9 +53,7 @@ class VertexSearchTool:
         """
         return self.client is not None
 
-    async def search(
-        self, query: str, max_results: int = 5
-    ) -> list[dict[str, Any]]:
+    async def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]:
         """
         Search Vertex AI knowledge base.
 
@@ -97,9 +95,7 @@ class VertexSearchTool:
 
                 # Extract metadata
                 title = doc.derived_struct_data.get("title", "Untitled")
-                snippet = doc.derived_struct_data.get("snippets", [{}])[0].get(
-                    "snippet", ""
-                )
+                snippet = doc.derived_struct_data.get("snippets", [{}])[0].get("snippet", "")
                 link = doc.derived_struct_data.get("link", "")
 
                 results.append(
@@ -122,7 +118,7 @@ class VertexSearchTool:
                 "vertex",
                 f"Vertex AI Search failed: {str(e)}",
                 {"query": query},
-            )
+            ) from e
 
     def format_citations(self, results: list[dict[str, Any]]) -> str:
         """

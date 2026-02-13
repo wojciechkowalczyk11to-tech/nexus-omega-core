@@ -2,17 +2,14 @@
 Authentication service for user registration, unlock, and JWT management.
 """
 
-from datetime import datetime, timedelta, timezone
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import (
     AuthenticationError,
-    InvalidInviteCodeError,
     UserNotFoundError,
 )
-from app.core.security import create_access_token, hash_invite_code, verify_invite_code
+from app.core.security import create_access_token, hash_invite_code
 from app.db.models.user import User
 from app.services.invite_service import InviteService
 from app.services.user_service import UserService

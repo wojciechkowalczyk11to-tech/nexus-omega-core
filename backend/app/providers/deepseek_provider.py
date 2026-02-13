@@ -51,9 +51,7 @@ class DeepSeekProvider(BaseProvider):
     ) -> ProviderResponse:
         """Generate completion using DeepSeek."""
         if not self.is_available():
-            raise ProviderError(
-                "DeepSeek API key not configured", {"provider": "deepseek"}
-            )
+            raise ProviderError("DeepSeek API key not configured", {"provider": "deepseek"})
 
         start_time = time.time()
 
@@ -94,15 +92,13 @@ class DeepSeekProvider(BaseProvider):
             raise ProviderError(
                 f"DeepSeek generation failed: {str(e)}",
                 {"provider": "deepseek", "model": model},
-            )
+            ) from e
 
     def get_model_for_profile(self, profile: str) -> str:
         """Get DeepSeek model for profile."""
         return self.PROFILE_MODELS.get(profile, self.PROFILE_MODELS["eco"])
 
-    def calculate_cost(
-        self, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for DeepSeek request."""
         pricing = self.PRICING.get(model, {"input": 0.14, "output": 0.28})
 

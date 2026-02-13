@@ -38,7 +38,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         welcome_text = f"""👋 Witaj w **NexusOmegaCore**!
 
 Twoja rola: **{role}**
-Status: {'✅ Autoryzowany' if authorized else '⚠️ Nieautoryzowany'}
+Status: {"✅ Autoryzowany" if authorized else "⚠️ Nieautoryzowany"}
 
 🤖 Jestem zaawansowanym asystentem AI z dostępem do:
 - 7 providerów AI (Gemini, DeepSeek, Groq, OpenRouter, Grok, OpenAI, Claude)
