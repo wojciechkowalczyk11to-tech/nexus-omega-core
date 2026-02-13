@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.core.exceptions import RAGError
 from app.db.models.user import User
-from app.tools.rag_tool import RAGTool
+from app.tools.rag_tool_v2 import RAGToolV2
 
 router = APIRouter()
 
@@ -67,7 +67,7 @@ async def upload_document(
             detail="RAG upload wymaga roli FULL_ACCESS. Użyj /subscribe",
         )
 
-    rag_tool = RAGTool(db)
+    rag_tool = RAGToolV2(db)
 
     try:
         # Read file content
@@ -105,7 +105,7 @@ async def list_documents(
     """
     List user's RAG documents.
     """
-    rag_tool = RAGTool(db)
+    rag_tool = RAGToolV2(db)
 
     items = await rag_tool.list_documents(current_user.telegram_id)
 
@@ -135,7 +135,7 @@ async def delete_document(
     """
     Delete a RAG document.
     """
-    rag_tool = RAGTool(db)
+    rag_tool = RAGToolV2(db)
 
     success = await rag_tool.delete_document(current_user.telegram_id, item_id)
 
