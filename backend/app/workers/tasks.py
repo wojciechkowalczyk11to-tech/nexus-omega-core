@@ -127,37 +127,62 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
 
 
 @celery_app.task(name="tasks.sync_github_repo")
-def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
+def sync_github_repo(repo_url: str, user_id: int) -> dict[str, Any]:
     """
     Sync GitHub repository for Devin mode.
 
+    Clones the repository, indexes code files into the RAG system
+    with pgvector embeddings for semantic search.
+
     Args:
-        user_id: User's Telegram ID
         repo_url: GitHub repository URL
+        user_id: User's Telegram ID
 
     Returns:
-        Task result dict
+        Task result dict with status, repo_url, and files_indexed count
     """
+    import shutil
+    import tempfile
+
     logger.info(f"Syncing GitHub repo for user {user_id}: {repo_url}")
 
+    clone_dir = tempfile.mkdtemp(prefix="github_sync_")
+
     try:
-        # Placeholder for GitHub sync logic
-        # In production, this would:
-        # 1. Clone/pull repository
-        # 2. Index code files
-        # 3. Store in RAG system
-        # 4. Update sync status
+        from app.db.session import async_session_maker
+        from app.tools.github_devin_tool import GitHubDevinTool
+
+        async def _sync() -> dict[str, Any]:
+            async with async_session_maker() as db:
+                tool = GitHubDevinTool(user_id=user_id, db=db)
+                clone_result = await tool.clone_repository(repo_url)
+                repo_name = clone_result["repo_name"]
+                index_result = await tool.index_repository(repo_name)
+                await db.commit()
+                return {
+                    "repo_name": repo_name,
+                    "files_indexed": index_result["files_indexed"],
+                }
+
+        result = asyncio.run(_sync())
+
+        logger.info(
+            f"GitHub repo synced for user {user_id}: "
+            f"{result['files_indexed']} files indexed"
+        )
 
         return {
             "status": "success",
             "repo_url": repo_url,
-            "files_indexed": 0,
-            "message": "GitHub sync not implemented (placeholder)",
+            "files_indexed": result["files_indexed"],
         }
 
     except Exception as e:
         logger.error(f"sync_github_repo error: {e}", exc_info=True)
         return {
             "status": "error",
+            "repo_url": repo_url,
             "error": str(e),
         }
+    finally:
+        shutil.rmtree(clone_dir, ignore_errors=True)
