@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.db.models.rag_chunk import RagChunk
     from app.db.models.user import User
 
 
@@ -49,6 +50,11 @@ class RagItem(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="rag_items")
+    chunks: Mapped[list["RagChunk"]] = relationship(
+        "RagChunk",
+        back_populates="rag_item",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<RagItem(id={self.id}, filename={self.filename}, status={self.status})>"

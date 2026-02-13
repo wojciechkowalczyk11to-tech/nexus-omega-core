@@ -168,3 +168,98 @@ async def get_providers(
     ]
 
     return ProvidersResponse(providers=available_providers)
+
+
+
+class AgentTraceResponse(BaseModel):
+    """Agent trace response schema."""
+
+    iteration: int
+    action: str
+    thought: str | None
+    tool_name: str | None
+    tool_args: dict | None
+    tool_result: dict | None
+    correction_reason: str | None
+    timestamp_ms: int
+
+
+class AgentTracesResponse(BaseModel):
+    """Agent traces list response."""
+
+    message_id: int
+    traces: list[AgentTraceResponse]
+
+
+@router.get("/messages/{message_id}/traces", response_model=AgentTracesResponse)
+async def get_message_traces(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AgentTracesResponse:
+    """
+    Get agent reasoning traces for a specific message.
+    
+    Returns the complete thought process of the agent including:
+    - Reasoning steps
+    - Tool calls and results
+    - Self-correction attempts
+    - Timing information
+    
+    Args:
+        message_id: Message ID
+        current_user: Current authenticated user
+        db: Database session
+        
+    Returns:
+        Agent traces for the message
+        
+    Raises:
+        404: If message not found or not owned by user
+    """
+    from sqlalchemy import select
+    from app.db.models.agent_trace import AgentTrace
+    from app.db.models.message import Message
+    
+    # Verify message exists and belongs to user
+    result = await db.execute(
+        select(Message).where(
+            Message.id == message_id,
+            Message.user_id == current_user.telegram_id,
+        )
+    )
+    message = result.scalar_one_or_none()
+    
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Message not found",
+        )
+    
+    # Get all traces for this message
+    result = await db.execute(
+        select(AgentTrace)
+        .where(AgentTrace.message_id == message_id)
+        .order_by(AgentTrace.iteration, AgentTrace.timestamp_ms)
+    )
+    traces = list(result.scalars().all())
+    
+    # Convert to response format
+    trace_responses = [
+        AgentTraceResponse(
+            iteration=trace.iteration,
+            action=trace.action,
+            thought=trace.thought,
+            tool_name=trace.tool_name,
+            tool_args=trace.tool_args,
+            tool_result=trace.tool_result,
+            correction_reason=trace.correction_reason,
+            timestamp_ms=trace.timestamp_ms,
+        )
+        for trace in traces
+    ]
+    
+    return AgentTracesResponse(
+        message_id=message_id,
+        traces=trace_responses,
+    )

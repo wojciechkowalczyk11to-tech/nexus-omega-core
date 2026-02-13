@@ -180,14 +180,15 @@ class MemoryManager:
         await self.db.refresh(message)
         return message
 
-    async def maybe_create_snapshot(self, session_id: int) -> bool:
+    async def maybe_create_snapshot(self, session_id: int, llm_provider = None) -> bool:
         """
         Create snapshot if message threshold reached.
 
-        Compresses conversation history using LLM (placeholder for now).
+        Compresses conversation history using LLM for intelligent summarization.
 
         Args:
             session_id: Session ID
+            llm_provider: Optional LLM provider for compression (uses fast model)
 
         Returns:
             True if snapshot created, False otherwise
@@ -210,13 +211,15 @@ class MemoryManager:
         if not messages:
             return False
 
-        # Create snapshot text (simple concatenation for now)
-        # TODO: In Phase 2, use LLM to compress this
-        snapshot_parts = []
-        for msg in messages:
-            snapshot_parts.append(f"{msg.role}: {msg.content[:200]}")
-
-        snapshot_text = "\n".join(snapshot_parts)
+        # Compress using LLM if provider available
+        if llm_provider:
+            snapshot_text = await self._compress_with_llm(messages, llm_provider)
+        else:
+            # Fallback to simple concatenation
+            snapshot_parts = []
+            for msg in messages:
+                snapshot_parts.append(f"{msg.role}: {msg.content[:200]}")
+            snapshot_text = "\n".join(snapshot_parts)
 
         # Update session snapshot
         session.snapshot_text = snapshot_text
@@ -224,6 +227,64 @@ class MemoryManager:
         await self.db.flush()
 
         return True
+
+    async def _compress_with_llm(
+        self,
+        messages: list[Message],
+        llm_provider,
+    ) -> str:
+        """
+        Compress conversation history using LLM.
+
+        Uses fast, cheap model (Gemini Flash or similar) to generate
+        concise summary while preserving key information.
+
+        Args:
+            messages: List of messages to compress
+            llm_provider: LLM provider instance
+
+        Returns:
+            Compressed summary text
+        """
+        from app.core.logging_config import get_logger
+        logger = get_logger(__name__)
+
+        # Build conversation text
+        conversation_parts = []
+        for msg in messages:
+            role_label = "User" if msg.role == "user" else "Assistant"
+            conversation_parts.append(f"{role_label}: {msg.content}")
+
+        conversation_text = "\n\n".join(conversation_parts)
+
+        # Compression prompt
+        compression_prompt = f"""Podsumuj poniższą konwersację w maksymalnie 300 słowach, zachowując wszystkie kluczowe informacje, fakty, decyzje i kontekst. Podsumowanie powinno być zwięzłe ale kompletne.
+
+Konwersacja:
+{conversation_text}
+
+Podsumowanie:"""
+
+        try:
+            # Call LLM with compression prompt
+            response = await llm_provider.generate(
+                messages=[{"role": "user", "content": compression_prompt}],
+                model="gemini-2.0-flash-exp",  # Fast, cheap model
+                temperature=0.3,  # Low temperature for factual summary
+                max_tokens=500,
+            )
+
+            compressed_text = response.content.strip()
+            logger.info(f"Compressed {len(messages)} messages into {len(compressed_text)} chars")
+            return compressed_text
+
+        except Exception as e:
+            logger.error(f"LLM compression failed: {e}, falling back to simple concatenation")
+            # Fallback to simple concatenation
+            snapshot_parts = []
+            for msg in messages:
+                snapshot_parts.append(f"{msg.role}: {msg.content[:200]}")
+            return "\n".join(snapshot_parts)
 
     async def get_absolute_memory(self, user_id: int, key: str) -> str | None:
         """
