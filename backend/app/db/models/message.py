@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.db.models.agent_trace import AgentTrace
     from app.db.models.session import ChatSession
     from app.db.models.user import User
 
@@ -44,6 +45,11 @@ class Message(Base):
     # Relationships
     session: Mapped["ChatSession"] = relationship("ChatSession", back_populates="messages")
     user: Mapped["User"] = relationship("User", back_populates="messages")
+    agent_traces: Mapped[list["AgentTrace"]] = relationship(
+        "AgentTrace",
+        back_populates="message",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Message(id={self.id}, session_id={self.session_id}, role={self.role})>"
