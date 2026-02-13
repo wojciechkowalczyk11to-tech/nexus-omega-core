@@ -523,10 +523,10 @@ def create_default_tools(db=None) -> ToolRegistry:
                     error="RAG wymaga sesji bazy danych.",
                     retryable=False,
                 )
-            from app.tools.rag_tool import RAGTool
+            from app.tools.rag_tool_v2 import RAGToolV2
 
-            tool = RAGTool(db_session)
-            results = await tool.search(user_id, query, top_k=top_k)
+            tool = RAGToolV2(db_session)
+            results = await tool.search_semantic(user_id, query, top_k=top_k)
             if not results:
                 return ToolResult(success=True, data="Brak pasujących dokumentów użytkownika.")
             return ToolResult(success=True, data=results)
