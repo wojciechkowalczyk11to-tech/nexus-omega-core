@@ -3,8 +3,10 @@ Async database session management with connection pooling.
 """
 
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -18,14 +20,17 @@ from app.core.logging_config import get_logger
 logger = get_logger(__name__)
 
 # Create async engine with connection pooling
-engine: AsyncEngine = create_async_engine(
-    settings.database_url,
-    echo=False,  # Set to True for SQL query logging
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=3600,  # Recycle connections after 1 hour
-)
+engine_kwargs: dict[str, Any] = {
+    "echo": False,  # Set to True for SQL query logging
+    "pool_pre_ping": True,  # Verify connections before using
+    "pool_recycle": 3600,  # Recycle connections after 1 hour
+}
+database_scheme = make_url(settings.database_url).drivername.lower()
+if not database_scheme.startswith("sqlite"):
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+
+engine: AsyncEngine = create_async_engine(settings.database_url, **engine_kwargs)
 
 # Create async session maker
 AsyncSessionLocal = async_sessionmaker(
