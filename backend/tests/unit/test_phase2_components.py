@@ -766,6 +766,12 @@ class TestOrchestratorModels:
         assert step.action == AgentAction.USE_TOOL
         assert step.tool_name == "web_search"
 
+    def test_react_system_prompt_contains_pr_merge_guidance(self):
+        from app.services.orchestrator import REACT_SYSTEM_PROMPT
+
+        assert "otwarty PR" in REACT_SYSTEM_PROMPT
+        assert "squash and merge" in REACT_SYSTEM_PROMPT
+
 
 # ---------------------------------------------------------------------------
 # Integration-style Tests (without DB)
