@@ -66,19 +66,22 @@
         }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+        @keyframes blink { 0% { opacity: 0.2; transform: scale(0.8); } 20% { opacity: 1; transform: scale(1); } 100% { opacity: 0.2; transform: scale(0.8); } }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 h-screen overflow-hidden flex selection:bg-primary-500/30">
 
     <div id="app" class="flex w-full h-full">
         <!-- Sidebar: History -->
-        <aside :class="['bg-gray-900 border-r border-gray-800 transition-all duration-300 flex flex-col', sidebarOpen ? 'w-64' : 'w-0 overflow-hidden']">
+        <!-- Mobile Overlay -->
+        <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-20 md:hidden"></div>
+
+        <aside :class="['bg-gray-900 border-r border-gray-800 transition-all duration-300 flex flex-col absolute md:relative z-30 h-full', sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:w-0 md:translate-x-0 md:overflow-hidden']">
             <div class="p-4 flex items-center justify-between border-b border-gray-800">
                 <div class="flex items-center gap-2 font-bold text-lg text-primary-500">
                     <i data-lucide="zap"></i> Nexus Omega
                 </div>
-                <button @click="startNewChat" class="p-1 hover:bg-gray-800 rounded">
+                <button @click="startNewChat" class="p-1 hover:bg-gray-800 rounded" title="New Chat">
                     <i data-lucide="plus-square" class="w-5 h-5 text-gray-400"></i>
                 </button>
             </div>
