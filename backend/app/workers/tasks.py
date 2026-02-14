@@ -6,10 +6,12 @@ import asyncio
 import os
 import shutil
 import tempfile
-from datetime import UTC
+from datetime import timezone
 from typing import Any
 
 from app.core.logging_config import get_logger
+
+UTC = timezone.utc
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)

@@ -58,9 +58,14 @@ def test_sync_github_repo_returns_indexed_file_count_and_cleans_tempdir(
         "app.tools.github_devin_tool",
         types.SimpleNamespace(GitHubDevinTool=FakeGitHubDevinTool),
     )
-    monkeypatch.setattr(worker_tasks.tempfile, "mkdtemp", lambda prefix: str(temp_repo_dir))
+    monkeypatch.setattr(worker_tasks.tempfile, "mkdtemp", lambda *args, **kwargs: str(temp_repo_dir))
 
-    result = worker_tasks.sync_github_repo(123, "https://github.com/example/repo")
+    # Handle both direct function and Celery task wrapper
+    func = worker_tasks.sync_github_repo
+    if hasattr(func, "run"):
+        result = func.run(123, "https://github.com/example/repo")
+    else:
+        result = func(123, "https://github.com/example/repo")
 
     assert result == {
         "status": "success",

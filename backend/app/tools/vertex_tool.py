@@ -4,7 +4,10 @@ Vertex AI Search tool for knowledge base queries with citations.
 
 from typing import Any
 
-from google.cloud import discoveryengine_v1 as discoveryengine
+try:
+    from google.cloud import discoveryengine_v1 as discoveryengine
+except ImportError:
+    discoveryengine = None
 
 from app.core.config import settings
 from app.core.exceptions import ToolExecutionError
