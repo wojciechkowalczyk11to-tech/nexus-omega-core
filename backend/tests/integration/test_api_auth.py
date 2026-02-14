@@ -4,13 +4,13 @@ Integration tests for auth API endpoints.
 
 import pytest
 from app.main import app
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio
 async def test_register_new_user():
     """Test registering a new user."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/auth/register",
             json={
@@ -32,7 +32,7 @@ async def test_register_new_user():
 @pytest.mark.asyncio
 async def test_register_existing_user():
     """Test registering an existing user returns existing data."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Register first time
         response1 = await client.post(
             "/api/v1/auth/register",
@@ -62,7 +62,7 @@ async def test_register_existing_user():
 @pytest.mark.asyncio
 async def test_get_current_user():
     """Test getting current user with JWT."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Register user
         register_response = await client.post(
             "/api/v1/auth/register",
@@ -88,7 +88,7 @@ async def test_get_current_user():
 @pytest.mark.asyncio
 async def test_get_current_user_invalid_token():
     """Test getting current user with invalid token."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(
             "/api/v1/auth/me",
             headers={"Authorization": "Bearer invalid_token"},

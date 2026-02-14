@@ -4,6 +4,7 @@ Exports all models for Alembic autogenerate.
 """
 
 from app.db.base import Base
+from app.db.models.agent_trace import AgentTrace
 from app.db.models.audit_log import AuditLog
 from app.db.models.invite_code import InviteCode
 from app.db.models.ledger import UsageLedger
@@ -17,6 +18,7 @@ from app.db.models.user_memory import UserMemory
 
 __all__ = [
     "Base",
+    "AgentTrace",
     "User",
     "ChatSession",
     "Message",

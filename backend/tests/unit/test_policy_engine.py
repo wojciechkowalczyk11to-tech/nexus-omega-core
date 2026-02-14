@@ -5,6 +5,7 @@ Unit tests for policy engine.
 from datetime import date
 
 import pytest
+import pytest_asyncio
 from app.core.exceptions import PolicyDeniedError
 from app.db.models.user import User
 from app.services.policy_engine import PolicyEngine
@@ -147,7 +148,7 @@ async def test_free_provider_detection(db_session: AsyncSession):
 
 
 # Fixtures
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session():
     """Mock database session for testing."""
     from unittest.mock import AsyncMock

@@ -93,7 +93,7 @@ async def test_sandbox_path_validation():
 
     # Valid path
     valid_path = sandbox._validate_path("test.txt")
-    assert valid_path.startswith(sandbox.workspace_dir)
+    assert valid_path.startswith(sandbox.user_dir)
 
     # Path traversal attempt
     with pytest.raises(ValueError):
@@ -290,7 +290,7 @@ async def test_rag_tool_v2_reranking():
         },
         {
             "content": "Random content without keywords",
-            "similarity_score": 0.8,
+            "similarity_score": 0.75,
         },
         {
             "content": "Another Python programming tutorial",

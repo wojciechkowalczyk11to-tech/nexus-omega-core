@@ -2,12 +2,11 @@
 Pytest configuration and fixtures.
 """
 
-import asyncio
 from collections.abc import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from app.db.base import Base
+from app.db.models import *  # noqa: F401,F403 — register all models with metadata
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -28,14 +27,6 @@ TestSessionLocal = sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture
