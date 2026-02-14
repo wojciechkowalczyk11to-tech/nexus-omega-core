@@ -87,6 +87,7 @@ async def test_embedding_service_empty_text():
 @pytest.mark.asyncio
 async def test_sandbox_path_validation():
     """Test sandbox path traversal protection."""
+    from app.core.exceptions import SandboxError
     from app.services.sandbox import Sandbox
 
     sandbox = Sandbox(user_id=12345)
@@ -96,11 +97,11 @@ async def test_sandbox_path_validation():
     assert valid_path.startswith(sandbox.user_dir)
 
     # Path traversal attempt
-    with pytest.raises(ValueError):
+    with pytest.raises(SandboxError):
         sandbox._validate_path("../../../etc/passwd")
 
     # Forbidden path
-    with pytest.raises(ValueError):
+    with pytest.raises(SandboxError):
         sandbox._validate_path("/etc/passwd")
 
 

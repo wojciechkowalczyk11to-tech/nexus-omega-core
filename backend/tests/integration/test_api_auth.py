@@ -32,6 +32,8 @@ async def test_register_new_user():
 @pytest.mark.asyncio
 async def test_register_existing_user():
     """Test registering an existing user returns existing data."""
+    import asyncio
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Register first time
         response1 = await client.post(
@@ -43,6 +45,9 @@ async def test_register_existing_user():
         )
         assert response1.status_code == 200
         token1 = response1.json()["token"]
+
+        # Wait to ensure different JWT timestamp
+        await asyncio.sleep(1)
 
         # Register again
         response2 = await client.post(

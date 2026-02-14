@@ -10,6 +10,7 @@ from app.db.models.invite_code import InviteCode
 from app.db.models.ledger import UsageLedger
 from app.db.models.message import Message
 from app.db.models.payment import Payment
+from app.db.models.rag_chunk import RagChunk
 from app.db.models.rag_item import RagItem
 from app.db.models.session import ChatSession
 from app.db.models.tool_counter import ToolCounter
@@ -26,6 +27,7 @@ __all__ = [
     "ToolCounter",
     "AuditLog",
     "InviteCode",
+    "RagChunk",
     "RagItem",
     "UserMemory",
     "Payment",
