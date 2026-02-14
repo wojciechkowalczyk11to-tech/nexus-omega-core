@@ -3,6 +3,9 @@ Celery background tasks.
 """
 
 import asyncio
+import os
+import shutil
+import tempfile
 from datetime import UTC
 from typing import Any
 
@@ -140,19 +143,31 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
     """
     logger.info(f"Syncing GitHub repo for user {user_id}: {repo_url}")
 
+    temp_repo_dir = ""
+
     try:
-        # Placeholder for GitHub sync logic
-        # In production, this would:
-        # 1. Clone/pull repository
-        # 2. Index code files
-        # 3. Store in RAG system
-        # 4. Update sync status
+        from app.db.session import AsyncSessionLocal
+        from app.tools.github_devin_tool import GitHubDevinTool
+
+        temp_repo_dir = tempfile.mkdtemp(prefix=f"github_sync_{user_id}_")
+
+        async def _sync() -> int:
+            async with AsyncSessionLocal() as session:
+                github_tool = GitHubDevinTool(user_id=user_id, db=session)
+                github_tool.sandbox.repos_dir = temp_repo_dir
+
+                clone_result = await github_tool.clone_repository(repo_url)
+                index_result = await github_tool.index_repository(clone_result["repo_name"])
+
+                await session.commit()
+                return index_result.get("files_indexed", 0)
+
+        files_indexed = asyncio.run(_sync())
 
         return {
             "status": "success",
             "repo_url": repo_url,
-            "files_indexed": 0,
-            "message": "GitHub sync not implemented (placeholder)",
+            "files_indexed": files_indexed,
         }
 
     except Exception as e:
@@ -161,3 +176,6 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
             "status": "error",
             "error": str(e),
         }
+    finally:
+        if temp_repo_dir and os.path.exists(temp_repo_dir):
+            shutil.rmtree(temp_repo_dir, ignore_errors=True)

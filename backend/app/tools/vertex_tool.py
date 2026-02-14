@@ -90,7 +90,7 @@ class VertexSearchTool:
 
             # Parse results
             results = []
-            for result in response.results:
+            for index, result in enumerate(response.results):
                 doc = result.document
 
                 # Extract metadata
@@ -103,7 +103,7 @@ class VertexSearchTool:
                         "title": title,
                         "snippet": snippet,
                         "link": link,
-                        "score": 0.9,  # Placeholder - Vertex doesn't expose scores directly
+                        "score": round(1.0 / (index + 1), 4),
                         "source": "vertex",
                     }
                 )
