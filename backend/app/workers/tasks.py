@@ -6,12 +6,10 @@ import asyncio
 import os
 import shutil
 import tempfile
-from datetime import timezone
+from datetime import UTC
 from typing import Any
 
 from app.core.logging_config import get_logger
-
-UTC = timezone.utc
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
@@ -34,12 +32,12 @@ def cleanup_old_sessions() -> dict[str, Any]:
         from sqlalchemy import delete
 
         from app.db.models.session import ChatSession
-        from app.db.session import async_session_maker
+        from app.db.session import AsyncSessionLocal
 
         async def _cleanup() -> int:
             cutoff_date = datetime.now(UTC) - timedelta(days=30)
 
-            async with async_session_maker() as session:
+            async with AsyncSessionLocal() as session:
                 result = await session.execute(
                     delete(ChatSession).where(ChatSession.updated_at < cutoff_date)
                 )
@@ -85,12 +83,12 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
         from sqlalchemy import func, select
 
         from app.db.models.ledger import UsageLedger
-        from app.db.session import async_session_maker
+        from app.db.session import AsyncSessionLocal
 
         async def _generate() -> dict[str, Any]:
             cutoff_date = datetime.now(UTC) - timedelta(days=period_days)
 
-            async with async_session_maker() as session:
+            async with AsyncSessionLocal() as session:
                 # Get usage stats
                 result = await session.execute(
                     select(
