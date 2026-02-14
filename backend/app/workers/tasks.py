@@ -143,7 +143,7 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
     """
     logger.info(f"Syncing GitHub repo for user {user_id}: {repo_url}")
 
-    temp_repo_dir: str | None = None
+    temp_repo_dir = ""
 
     try:
         from app.db.session import AsyncSessionLocal
@@ -154,7 +154,7 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
         async def _sync() -> int:
             async with AsyncSessionLocal() as session:
                 github_tool = GitHubDevinTool(user_id=user_id, db=session)
-                github_tool.sandbox.repos_dir = temp_repo_dir or github_tool.sandbox.repos_dir
+                github_tool.sandbox.repos_dir = temp_repo_dir
 
                 clone_result = await github_tool.clone_repository(repo_url)
                 index_result = await github_tool.index_repository(clone_result["repo_name"])
