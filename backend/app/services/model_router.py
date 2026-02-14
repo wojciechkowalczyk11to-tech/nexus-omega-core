@@ -281,6 +281,8 @@ class ModelRouter:
         if word_count > 100:
             structural_complexity = 1.0
         elif word_count > 50:
+            # Long queries (50+ words) get high structural complexity
+            # to ensure they're classified as HARD difficulty
             structural_complexity = 1.0
         elif word_count > 20:
             structural_complexity = 0.4

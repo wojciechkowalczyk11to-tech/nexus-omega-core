@@ -30,6 +30,7 @@ except ImportError:
 def _compile_jsonb_sqlite(type_, compiler, **kw):
     return compiler.visit_JSON(JSON(), **kw)
 
+
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

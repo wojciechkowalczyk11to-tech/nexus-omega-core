@@ -2,6 +2,7 @@
 Integration test fixtures.
 """
 
+import os
 from unittest.mock import AsyncMock
 
 import pytest_asyncio
@@ -47,8 +48,6 @@ _TestSessionLocal = sessionmaker(_engine, class_=AsyncSession, expire_on_commit=
 @pytest_asyncio.fixture(autouse=True)
 async def _setup_integration_db():
     """Create tables, override deps, tear down after each test."""
-    import os
-
     # Clean up any previous test database
     db_path = "/tmp/integration_test.db"
     if os.path.exists(db_path):
@@ -85,8 +84,5 @@ async def _setup_integration_db():
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-    import os
-
-    db_path = "/tmp/integration_test.db"
     if os.path.exists(db_path):
         os.remove(db_path)
