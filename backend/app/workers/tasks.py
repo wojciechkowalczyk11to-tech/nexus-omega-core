@@ -167,8 +167,7 @@ def sync_github_repo(repo_url: str, user_id: int) -> dict[str, Any]:
         result = asyncio.run(_sync())
 
         logger.info(
-            f"GitHub repo synced for user {user_id}: "
-            f"{result['files_indexed']} files indexed"
+            f"GitHub repo synced for user {user_id}: " f"{result['files_indexed']} files indexed"
         )
 
         return {

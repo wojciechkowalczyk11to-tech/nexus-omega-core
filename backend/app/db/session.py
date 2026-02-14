@@ -18,13 +18,20 @@ from app.core.logging_config import get_logger
 logger = get_logger(__name__)
 
 # Create async engine with connection pooling
+# SQLite doesn't support pool_size/max_overflow, so only set them for non-SQLite
+_engine_kwargs: dict = {
+    "echo": False,  # Set to True for SQL query logging
+    "pool_pre_ping": True,  # Verify connections before using
+    "pool_recycle": 3600,  # Recycle connections after 1 hour
+}
+
+if not settings.database_url.startswith("sqlite"):
+    _engine_kwargs["pool_size"] = 10
+    _engine_kwargs["max_overflow"] = 20
+
 engine: AsyncEngine = create_async_engine(
     settings.database_url,
-    echo=False,  # Set to True for SQL query logging
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=3600,  # Recycle connections after 1 hour
+    **_engine_kwargs,
 )
 
 # Create async session maker

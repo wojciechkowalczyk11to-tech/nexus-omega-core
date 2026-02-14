@@ -4,13 +4,13 @@ Integration tests for chat API endpoints.
 
 import pytest
 from app.main import app
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio
 async def test_chat_unauthorized():
     """Test chat without authorization."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/chat/chat",
             json={"query": "Hello"},
@@ -22,7 +22,7 @@ async def test_chat_unauthorized():
 @pytest.mark.asyncio
 async def test_chat_with_valid_token():
     """Test chat with valid JWT token."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Register user
         register_response = await client.post(
             "/api/v1/auth/register",
@@ -51,7 +51,7 @@ async def test_chat_with_valid_token():
 @pytest.mark.asyncio
 async def test_get_providers():
     """Test getting available providers."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Register user
         register_response = await client.post(
             "/api/v1/auth/register",
