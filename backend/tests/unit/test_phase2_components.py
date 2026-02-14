@@ -770,6 +770,9 @@ class TestOrchestratorModels:
         from app.services.orchestrator import REACT_SYSTEM_PROMPT
 
         assert "otwarty PR" in REACT_SYSTEM_PROMPT
+        assert "porównanie commitów/plików" in REACT_SYSTEM_PROMPT
+        assert "status CI/checks" in REACT_SYSTEM_PROMPT
+        assert "unikalne zmiany" in REACT_SYSTEM_PROMPT
         assert "squash and merge" in REACT_SYSTEM_PROMPT
 
 
