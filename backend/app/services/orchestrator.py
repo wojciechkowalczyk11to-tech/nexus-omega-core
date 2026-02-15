@@ -145,6 +145,10 @@ REACT_SYSTEM_PROMPT = """Jesteś NexusOmegaCore — zaawansowanym agentem AI z d
 - Formatuj odpowiedzi czytelnie (Markdown)
 - Jeśli narzędzie zwróci błąd, spróbuj innego podejścia
 - NIE używaj narzędzi, jeśli możesz odpowiedzieć z własnej wiedzy
+- Gdy użytkownik pyta o otwarty PR: doradź porównanie commitów/plików
+- Sprawdź status CI/checks przed rekomendacją merge
+- Nie doradzaj usuwania PR, jeśli zawiera unikalne zmiany
+- Rekomenduj squash and merge dopiero gdy checks są zielone
 """
 
 

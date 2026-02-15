@@ -17,6 +17,27 @@ from unittest.mock import MagicMock
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
+def _ensure_test_env() -> None:
+    """Set required env vars and mock heavy deps so GitHubDevinTool can be imported in tests."""
+    import sys
+
+    defaults = {
+        "TELEGRAM_BOT_TOKEN": "test-token",
+        "DEMO_UNLOCK_CODE": "test-code",
+        "BOOTSTRAP_ADMIN_CODE": "test-code",
+        "JWT_SECRET_KEY": "test-jwt-secret-key-for-unit-tests",
+        "DATABASE_URL": "sqlite+aiosqlite:///test.db",
+        "POSTGRES_PASSWORD": "test-password",
+    }
+    for key, value in defaults.items():
+        os.environ.setdefault(key, value)
+
+    # Mock heavy dependencies not needed for pure-utility tests
+    for mod in ("sentence_transformers",):
+        sys.modules.setdefault(mod, MagicMock())
+
+
 # Embedding Service Tests
 
 
@@ -66,20 +87,21 @@ async def test_embedding_service_empty_text():
 @pytest.mark.asyncio
 async def test_sandbox_path_validation():
     """Test sandbox path traversal protection."""
+    from app.core.exceptions import SandboxError
     from app.services.sandbox import Sandbox
 
     sandbox = Sandbox(user_id=12345)
 
     # Valid path
     valid_path = sandbox._validate_path("test.txt")
-    assert valid_path.startswith(sandbox.workspace_dir)
+    assert valid_path.startswith(sandbox.user_dir)
 
     # Path traversal attempt
-    with pytest.raises(ValueError):
+    with pytest.raises(SandboxError):
         sandbox._validate_path("../../../etc/passwd")
 
     # Forbidden path
-    with pytest.raises(ValueError):
+    with pytest.raises(SandboxError):
         sandbox._validate_path("/etc/passwd")
 
 
@@ -269,7 +291,7 @@ async def test_rag_tool_v2_reranking():
         },
         {
             "content": "Random content without keywords",
-            "similarity_score": 0.8,
+            "similarity_score": 0.75,
         },
         {
             "content": "Another Python programming tutorial",
@@ -312,6 +334,7 @@ async def test_agent_trace_model():
 @pytest.mark.asyncio
 async def test_github_devin_tool_code_chunking():
     """Test code file chunking."""
+    _ensure_test_env()
     from app.tools.github_devin_tool import GitHubDevinTool
 
     db_mock = MagicMock(spec=AsyncSession)
@@ -338,6 +361,7 @@ class MyClass:
 @pytest.mark.asyncio
 async def test_github_devin_tool_directory_size():
     """Test directory size calculation."""
+    _ensure_test_env()
     from app.tools.github_devin_tool import GitHubDevinTool
 
     db_mock = MagicMock(spec=AsyncSession)

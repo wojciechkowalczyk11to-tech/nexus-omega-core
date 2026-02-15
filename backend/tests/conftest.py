@@ -2,15 +2,34 @@
 Pytest configuration and fixtures.
 """
 
-import asyncio
 from collections.abc import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from app.db.base import Base
+from app.db.models import *  # noqa: F401,F403 — register all models with metadata
+from sqlalchemy import JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
+
+# Render PostgreSQL-specific types as SQLite-compatible for testing
+try:
+    from pgvector.sqlalchemy import Vector
+
+    @compiles(Vector, "sqlite")
+    def _compile_vector_sqlite(type_, compiler, **kw):
+        return "TEXT"
+
+except ImportError:
+    pass
+
+
+@compiles(JSONB, "sqlite")
+def _compile_jsonb_sqlite(type_, compiler, **kw):
+    return compiler.visit_JSON(JSON(), **kw)
+
 
 # Test database URL (in-memory SQLite)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -28,14 +47,6 @@ TestSessionLocal = sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture

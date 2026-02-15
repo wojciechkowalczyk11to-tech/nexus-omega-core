@@ -766,6 +766,23 @@ class TestOrchestratorModels:
         assert step.action == AgentAction.USE_TOOL
         assert step.tool_name == "web_search"
 
+    def test_react_system_prompt_contains_pr_merge_guidance(self):
+        from app.services.orchestrator import REACT_SYSTEM_PROMPT
+
+        guidance_points = [
+            "otwarty PR",
+            "porównanie commitów/plików",
+            "status CI/checks",
+            "unikalne zmiany",
+            "squash and merge",
+        ]
+
+        for point in guidance_points:
+            assert point in REACT_SYSTEM_PROMPT
+
+        indices = [REACT_SYSTEM_PROMPT.index(point) for point in guidance_points]
+        assert indices == sorted(indices)
+
 
 # ---------------------------------------------------------------------------
 # Integration-style Tests (without DB)
@@ -814,10 +831,10 @@ class TestToolRegistrySchemaConsistency:
             required = openai_schema["function"]["parameters"]["required"]
 
             for param in tool.parameters:
-                assert param.name in props, (
-                    f"Missing param {param.name} in OpenAI schema for {tool.name}"
-                )
+                assert (
+                    param.name in props
+                ), f"Missing param {param.name} in OpenAI schema for {tool.name}"
                 if param.required:
-                    assert param.name in required, (
-                        f"Required param {param.name} not in required list for {tool.name}"
-                    )
+                    assert (
+                        param.name in required
+                    ), f"Required param {param.name} not in required list for {tool.name}"

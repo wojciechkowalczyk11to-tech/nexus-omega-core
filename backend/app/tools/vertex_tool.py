@@ -4,7 +4,10 @@ Vertex AI Search tool for knowledge base queries with citations.
 
 from typing import Any
 
-from google.cloud import discoveryengine_v1 as discoveryengine
+try:
+    from google.cloud import discoveryengine_v1 as discoveryengine
+except ImportError:
+    discoveryengine = None
 
 from app.core.config import settings
 from app.core.exceptions import ToolExecutionError
@@ -90,7 +93,7 @@ class VertexSearchTool:
 
             # Parse results
             results = []
-            for result in response.results:
+            for index, result in enumerate(response.results):
                 doc = result.document
 
                 # Extract metadata
@@ -103,7 +106,7 @@ class VertexSearchTool:
                         "title": title,
                         "snippet": snippet,
                         "link": link,
-                        "score": 0.9,  # Placeholder - Vertex doesn't expose scores directly
+                        "score": round(1.0 / (index + 1), 4),
                         "source": "vertex",
                     }
                 )
