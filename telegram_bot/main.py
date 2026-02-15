@@ -3,6 +3,9 @@ NexusOmegaCore Telegram Bot - Main entry point.
 """
 
 import logging
+import signal
+import threading
+from types import FrameType
 
 from telegram.ext import (
     Application,
@@ -39,6 +42,22 @@ def main() -> None:
     Start the Telegram bot.
     """
     logger.info("Starting NexusOmegaCore Telegram Bot...")
+
+    if settings.telegram_dry_run:
+        logger.info(
+            "Telegram dry-run mode enabled; skipping Telegram network startup "
+            "for deterministic CI boot verification."
+        )
+        stop_event = threading.Event()
+
+        def _handle_signal(signum: int, _frame: FrameType | None) -> None:
+            logger.info("Dry-run mode received signal %s, shutting down.", signum)
+            stop_event.set()
+
+        signal.signal(signal.SIGTERM, _handle_signal)
+        signal.signal(signal.SIGINT, _handle_signal)
+        stop_event.wait()
+        return
 
     # Create application
     application = Application.builder().token(settings.telegram_bot_token).build()

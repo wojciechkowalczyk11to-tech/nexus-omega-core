@@ -30,6 +30,10 @@ class BotSettings(BaseSettings):
 
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
+    telegram_dry_run: bool = Field(
+        default=False,
+        description="Start bot process without Telegram network calls",
+    )
 
     class Config:
         env_file = ".env"

@@ -93,6 +93,31 @@ Open Telegram and:
 
 ✅ **Done!** Your bot is live.
 
+## 🧪 Docker Smoke (CI parity)
+
+Run the same deterministic smoke flow locally:
+
+```bash
+cp .env.example .env
+echo "TELEGRAM_DRY_RUN=1" >> .env
+docker system prune -af || true
+docker builder prune -af || true
+df -h
+docker compose -f infra/docker-compose.yml up --build -d
+python3 scripts/wait_for_backend_health.py --url http://localhost:8000/api/v1/health --timeout 180
+docker compose -f infra/docker-compose.yml ps
+docker compose -f infra/docker-compose.yml exec -T backend alembic upgrade head
+docker compose -f infra/docker-compose.yml down -v
+```
+
+You can also run the health waiter independently:
+
+```bash
+python3 scripts/wait_for_backend_health.py --url http://localhost:8000/api/v1/health --timeout 180
+```
+
+`TELEGRAM_DRY_RUN` is optional and defaults to disabled (`0`/unset). Set `TELEGRAM_DRY_RUN=1` only for CI/smoke runs to start the bot process without contacting Telegram network APIs.
+
 ## 🔑 API Keys Setup
 
 ### Required (at least 1)
