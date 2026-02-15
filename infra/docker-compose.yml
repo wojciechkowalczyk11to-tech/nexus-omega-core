@@ -52,11 +52,15 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import json,sys,urllib.request\nurl='http://localhost:8000/api/v1/health'\ntry:\n data=json.load(urllib.request.urlopen(url))\n ok=all(data.get(k)=='healthy' for k in ('status','database','redis'))\n if not ok: print(data, file=sys.stderr)\n sys.exit(0 if ok else 1)\nexcept Exception as exc:\n print(f'healthcheck error: {exc}', file=sys.stderr)\n sys.exit(1)\"",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 90s
     networks:
       - nexus-network
     restart: unless-stopped
