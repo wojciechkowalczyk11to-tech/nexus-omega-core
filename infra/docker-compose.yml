@@ -38,6 +38,7 @@ services:
     build:
       context: ../backend
       dockerfile: ../infra/Dockerfile.backend
+    image: infra-backend:latest
     container_name: nexus-backend
     environment:
       - DATABASE_URL=postgresql+asyncpg://jarvis:${POSTGRES_PASSWORD:-changeme}@postgres:5432/jarvis
@@ -83,10 +84,9 @@ services:
     restart: unless-stopped
 
   worker:
-    build:
-      context: ../backend
-      dockerfile: ../infra/Dockerfile.worker
+    image: infra-backend:latest
     container_name: nexus-worker
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]
     environment:
       - DATABASE_URL=postgresql+asyncpg://jarvis:${POSTGRES_PASSWORD:-changeme}@postgres:5432/jarvis
       - REDIS_URL=redis://redis:6379/0

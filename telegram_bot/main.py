@@ -3,6 +3,7 @@ NexusOmegaCore Telegram Bot - Main entry point.
 """
 
 import logging
+import time
 
 from telegram.ext import (
     Application,
@@ -39,6 +40,14 @@ def main() -> None:
     Start the Telegram bot.
     """
     logger.info("Starting NexusOmegaCore Telegram Bot...")
+
+    if settings.telegram_dry_run:
+        logger.info(
+            "Telegram dry-run mode enabled; skipping Telegram network startup "
+            "for deterministic CI boot verification."
+        )
+        while True:
+            time.sleep(60)
 
     # Create application
     application = Application.builder().token(settings.telegram_bot_token).build()

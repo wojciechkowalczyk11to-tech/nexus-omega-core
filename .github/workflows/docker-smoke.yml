@@ -1,0 +1,58 @@
+name: Docker Smoke
+
+on:
+  pull_request:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare deterministic CI environment
+        run: |
+          cp .env.example .env
+          echo "TELEGRAM_DRY_RUN=1" >> .env
+          grep "^TELEGRAM_DRY_RUN=" .env
+
+      - name: Free disk space
+        run: |
+          docker system prune -af || true
+          docker builder prune -af || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache || true
+          df -h
+
+      - name: Build and boot compose stack
+        run: docker compose -f infra/docker-compose.yml up --build -d
+
+      - name: Wait for backend semantic health
+        run: python3 scripts/wait_for_backend_health.py --url http://localhost:8000/api/v1/health --timeout 180
+
+      - name: Verify worker is running
+        run: |
+          docker compose -f infra/docker-compose.yml ps
+          worker_container_id="$(docker compose -f infra/docker-compose.yml ps -q worker)"
+          if [ -z "${worker_container_id}" ]; then
+            echo "worker container id not found" >&2
+            exit 1
+          fi
+          worker_state="$(docker inspect -f '{{.State.Status}}' "${worker_container_id}")"
+          if [ "${worker_state}" != "running" ]; then
+            echo "worker state is '${worker_state}', expected 'running'" >&2
+            exit 1
+          fi
+
+      - name: Verify migrations are runnable
+        run: docker compose -f infra/docker-compose.yml exec -T backend alembic upgrade head
+
+      - name: Collect compose logs on failure
+        if: failure()
+        run: |
+          docker compose -f infra/docker-compose.yml logs --no-color --tail=300 backend worker telegram_bot || true
+          docker compose -f infra/docker-compose.yml ps || true
+
+      - name: Tear down compose stack
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down -v || true
