@@ -12,7 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+RUN mkdir -p /app/telegram_bot
+COPY . /app/telegram_bot/
 
 # Set Python path
 ENV PYTHONPATH=/app

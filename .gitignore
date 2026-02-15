@@ -63,9 +63,6 @@ docker-compose.override.yml
 # GitHub
 github_private_key.pem
 
-# Alembic
-alembic.ini
-
 # Temporary files
 tmp/
 temp/
