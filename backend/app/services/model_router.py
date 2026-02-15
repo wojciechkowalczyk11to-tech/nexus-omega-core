@@ -214,6 +214,14 @@ class ModelRouter:
         r"\b(jak się masz|how are you|co słychać|what's up)\b",
     ]
 
+    ANALYTICAL_PATTERNS = [
+        r"\b(przeanalizuj|analizuj|porównaj|zaprojektuj|zoptymalizuj|oceń)\b",
+        r"\b(analyze|compare|design|optimize|evaluate|refactor)\b",
+        r"\b(architektura|architecture|algorytm|algorithm|złożoność|complexity)\b",
+        r"\b(wyjaśnij szczegółowo|explain in detail|krok po kroku|step by step)\b",
+        r"\b(zaimplementuj|implement|debuguj|debug|refaktoryzuj|strategia|strategy)\b",
+    ]
+
     # Token-based smart credits calculation
     SMART_CREDIT_TIERS = [
         (500, 1),  # ≤500 tokens = 1 credit
@@ -273,7 +281,9 @@ class ModelRouter:
         if word_count > 100:
             structural_complexity = 1.0
         elif word_count > 50:
-            structural_complexity = 0.7
+            # Long queries (50+ words) get high structural complexity
+            # to ensure they're classified as HARD difficulty
+            structural_complexity = 1.0
         elif word_count > 20:
             structural_complexity = 0.4
         elif word_count > 10:
@@ -296,25 +306,32 @@ class ModelRouter:
         # --- Signal 4: Combined difficulty score ---
         difficulty_score = (
             hard_score * 0.4
-            + structural_complexity * 0.3
+            + structural_complexity * 0.5
             + (
                 0.3
                 if any(i in (QueryIntent.ANALYTICAL, QueryIntent.CODE) for i in intents)
                 else 0.0
             )
-            + medium_score * 0.15
+            + medium_score * 0.3
         )
 
         # Reduce difficulty for conversational/simple queries
-        if QueryIntent.CONVERSATIONAL in intents and len(intents) == 1:
+        # Only apply penalty when there are no significant keyword or structural signals
+        if (
+            QueryIntent.CONVERSATIONAL in intents
+            and len(intents) == 1
+            and hard_score < 0.1
+            and medium_score < 0.1
+            and structural_complexity < 0.3
+        ):
             difficulty_score = max(0.0, difficulty_score - 0.5)
 
         signals["difficulty_score"] = difficulty_score
 
         # --- Classify difficulty ---
-        if difficulty_score >= 0.6:
+        if difficulty_score >= 0.5:
             difficulty = DifficultyLevel.HARD
-        elif difficulty_score >= 0.25:
+        elif difficulty_score >= 0.15:
             difficulty = DifficultyLevel.MEDIUM
         else:
             difficulty = DifficultyLevel.EASY
@@ -499,6 +516,7 @@ class ModelRouter:
             (self.DOCUMENT_PATTERNS, QueryIntent.DOCUMENT),
             (self.MEMORY_PATTERNS, QueryIntent.MEMORY),
             (self.TEMPORAL_PATTERNS, QueryIntent.TEMPORAL),
+            (self.ANALYTICAL_PATTERNS, QueryIntent.ANALYTICAL),
             (self.CONVERSATIONAL_PATTERNS, QueryIntent.CONVERSATIONAL),
         ]
 

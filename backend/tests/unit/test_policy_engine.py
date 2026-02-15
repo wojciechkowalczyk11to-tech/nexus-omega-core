@@ -5,6 +5,7 @@ Unit tests for policy engine.
 from datetime import date
 
 import pytest
+import pytest_asyncio
 from app.core.exceptions import PolicyDeniedError
 from app.db.models.user import User
 from app.services.policy_engine import PolicyEngine
@@ -147,15 +148,32 @@ async def test_free_provider_detection(db_session: AsyncSession):
 
 
 # Fixtures
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session():
     """Mock database session for testing."""
-    from unittest.mock import AsyncMock
+    from unittest.mock import AsyncMock, MagicMock
 
     session = AsyncMock(spec=AsyncSession)
-    session.execute = AsyncMock()
+
+    # Track added objects so increment_counter can find them on subsequent calls
+    _added_objects: list = []
+
+    def _add_side_effect(obj):
+        _added_objects.append(obj)
+
+    def _execute_side_effect(*args, **kwargs):
+        mock_result = MagicMock()
+        # Return last added ToolCounter if one exists, None otherwise
+        found = None
+        for obj in _added_objects:
+            if hasattr(obj, "grok_calls"):  # ToolCounter
+                found = obj
+        mock_result.scalar_one_or_none.return_value = found
+        return mock_result
+
+    session.execute = AsyncMock(side_effect=_execute_side_effect)
     session.flush = AsyncMock()
     session.refresh = AsyncMock()
-    session.add = AsyncMock()
+    session.add = MagicMock(side_effect=_add_side_effect)
 
     return session
