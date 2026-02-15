@@ -10,6 +10,9 @@ import time
 import urllib.error
 import urllib.request
 
+HEALTHY_KEYS = ("status", "database", "redis")
+REQUEST_TIMEOUT_SECONDS = 5
+
 
 def _stderr(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
@@ -18,7 +21,7 @@ def _stderr(message: str) -> None:
 def _is_healthy(payload: object) -> bool:
     if not isinstance(payload, dict):
         return False
-    return all(payload.get(key) == "healthy" for key in ("status", "database", "redis"))
+    return all(payload.get(key) == "healthy" for key in HEALTHY_KEYS)
 
 
 def wait_for_health(url: str, timeout: int, interval: float) -> int:
@@ -28,7 +31,7 @@ def wait_for_health(url: str, timeout: int, interval: float) -> int:
     while time.time() < deadline:
         attempt += 1
         try:
-            with urllib.request.urlopen(url, timeout=5) as response:
+            with urllib.request.urlopen(url, timeout=REQUEST_TIMEOUT_SECONDS) as response:
                 body = response.read().decode("utf-8", errors="replace")
             try:
                 payload = json.loads(body)
