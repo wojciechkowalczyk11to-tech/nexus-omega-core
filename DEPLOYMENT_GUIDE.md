@@ -29,9 +29,10 @@ Edit `.env` and fill in **required** fields:
 ```env
 # Required
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-SECRET_KEY=generate_random_32_chars_here
 DEMO_UNLOCK_CODE=DEMO2024
-BOOTSTRAP_CODE=ADMIN2024
+BOOTSTRAP_ADMIN_CODE=ADMIN2024
+JWT_SECRET_KEY=generate_random_32_chars_here
+POSTGRES_PASSWORD=change_this_in_production
 
 # At least ONE AI provider API key
 GEMINI_API_KEY=your_gemini_key_here
@@ -74,8 +75,8 @@ curl http://localhost:8000/api/v1/health
 # Expected response:
 {
   "status": "healthy",
-  "database": "connected",
-  "redis": "connected"
+  "database": "healthy",
+  "redis": "healthy"
 }
 
 # Check logs
@@ -146,8 +147,8 @@ Open Telegram and:
 3. Create data store
 4. Add to `.env`:
    ```
-   GCP_PROJECT_ID=your-project-id
-   VERTEX_DATASTORE_ID=your-datastore-id
+   VERTEX_PROJECT_ID=your-project-id
+   VERTEX_SEARCH_DATASTORE_ID=your-datastore-id
    ```
 
 ## 🔐 Security Configuration
@@ -160,14 +161,14 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 
 Copy output to `.env`:
 ```env
-SECRET_KEY=your_generated_secret_here
+JWT_SECRET_KEY=your_generated_secret_here
 ```
 
 ### Set Unlock Codes
 
 ```env
 DEMO_UNLOCK_CODE=DEMO2024        # For DEMO access
-BOOTSTRAP_CODE=ADMIN2024         # For first admin user
+BOOTSTRAP_ADMIN_CODE=ADMIN2024   # For first admin user
 ```
 
 **⚠️ Change these in production!**
@@ -230,13 +231,13 @@ alembic upgrade head
 ### Backup Database
 
 ```bash
-docker exec nexus-postgres pg_dump -U nexus nexus_db > backup.sql
+docker exec nexus-postgres pg_dump -U jarvis jarvis > backup.sql
 ```
 
 ### Restore Database
 
 ```bash
-docker exec -i nexus-postgres psql -U nexus nexus_db < backup.sql
+docker exec -i nexus-postgres psql -U jarvis jarvis < backup.sql
 ```
 
 ## 👤 User Management
@@ -259,7 +260,7 @@ VALUES ('INVITE123', 10, NOW() + INTERVAL '30 days', 1);
 ### Check User Status
 
 ```bash
-docker exec -it nexus-postgres psql -U nexus nexus_db
+docker exec -it nexus-postgres psql -U jarvis jarvis
 ```
 
 ```sql
@@ -373,9 +374,9 @@ DATABASE_URL=postgresql+asyncpg://user:pass@db.example.com:5432/nexus
 REDIS_URL=redis://cache.example.com:6379/0
 
 # Security
-SECRET_KEY=use_strong_random_key_here
+JWT_SECRET_KEY=use_strong_random_key_here
 DEMO_UNLOCK_CODE=change_this
-BOOTSTRAP_CODE=change_this
+BOOTSTRAP_ADMIN_CODE=change_this
 
 # CORS (if using web frontend)
 CORS_ORIGINS=["https://yourdomain.com"]

@@ -4,7 +4,9 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     gcc \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -18,4 +20,4 @@ COPY . .
 ENV PYTHONPATH=/app
 
 # Start Celery worker
-CMD ["celery", "-A", "backend.app.workers.celery_app", "worker", "--loglevel=info"]
+CMD ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]
