@@ -62,7 +62,7 @@ def upgrade() -> None:
             server_default="",
         ),
     )
-    op.create_index(op.f("ix_product_id"), "payments", ["product_id"], unique=False)
+    op.create_index(op.f("ix_payments_product_id"), "payments", ["product_id"], unique=False)
 
     op.add_column(
         "payments",
@@ -177,7 +177,7 @@ def downgrade() -> None:
     op.drop_column("payments", "provider_payment_charge_id")
     op.drop_column("payments", "credits_granted")
     op.drop_column("payments", "amount_stars")
-    op.drop_index(op.f("ix_product_id"), table_name="payments")
+    op.drop_index(op.f("ix_payments_product_id"), table_name="payments")
     op.drop_column("payments", "product_id")
 
     op.drop_column("users", "credits_balance")
