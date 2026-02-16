@@ -35,7 +35,7 @@ class RagChunk(Base):
     )
 
     rag_item_id: Mapped[int] = mapped_column(
-        BigInteger,
+        Integer,
         ForeignKey("rag_items.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

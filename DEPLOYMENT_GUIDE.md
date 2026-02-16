@@ -428,7 +428,7 @@ docker compose -f docker-compose.production.yml exec -T backend alembic upgrade 
 
 | Service        | Image / Build            | Restart       | Log Limits         |
 |----------------|--------------------------|---------------|--------------------|
-| **postgres**   | postgres:16-alpine       | unless-stopped | 10 MB × 3 files   |
+| **postgres**   | pgvector/pgvector:pg16   | unless-stopped | 10 MB × 3 files   |
 | **redis**      | redis:7-alpine           | unless-stopped | 10 MB × 3 files   |
 | **backend**    | Built from `backend/`    | unless-stopped | 20 MB × 5 files   |
 | **telegram_bot** | Built from `telegram_bot/` | unless-stopped | 10 MB × 5 files |

@@ -34,7 +34,7 @@ class AgentTrace(Base):
     )
 
     message_id: Mapped[int] = mapped_column(
-        BigInteger,
+        Integer,
         ForeignKey("messages.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
