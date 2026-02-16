@@ -256,12 +256,20 @@ alembic upgrade head
 ### Backup Database
 
 ```bash
+# Using the backup script (recommended)
+./scripts/backup_db.sh
+
+# Or manually:
 docker exec nexus-postgres pg_dump -U jarvis jarvis > backup.sql
 ```
 
 ### Restore Database
 
 ```bash
+# Using the restore script (recommended)
+./scripts/restore_db.sh backups/nexus_backup_20260101_120000.sql
+
+# Or manually:
 docker exec -i nexus-postgres psql -U jarvis jarvis < backup.sql
 ```
 
@@ -384,6 +392,95 @@ docker stats
    ```
 
 ## 🚀 Production Deployment
+
+### Quick Production Deploy
+
+The production compose file lives at the repo root and is self-contained:
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env – fill in all REQUIRED values (see "Security Configuration" above)
+
+# 2. Deploy (build + start + verify)
+./scripts/deploy_production.sh
+
+# Or manually:
+docker compose -f docker-compose.production.yml up -d --build
+
+# 3. Verify
+docker compose -f docker-compose.production.yml ps
+curl http://localhost:8000/api/v1/health
+# Expected:
+# {
+#   "status": "healthy",
+#   "database": "healthy",
+#   "redis": "healthy"
+# }
+
+# 4. Run migrations (already runs on backend start; safe to re-run)
+docker compose -f docker-compose.production.yml exec -T backend alembic upgrade head
+```
+
+### Production Compose Details
+
+`docker-compose.production.yml` includes:
+
+| Service        | Image / Build            | Restart       | Log Limits         |
+|----------------|--------------------------|---------------|--------------------|
+| **postgres**   | postgres:16-alpine       | unless-stopped | 10 MB × 3 files   |
+| **redis**      | redis:7-alpine           | unless-stopped | 10 MB × 3 files   |
+| **backend**    | Built from `backend/`    | unless-stopped | 20 MB × 5 files   |
+| **telegram_bot** | Built from `telegram_bot/` | unless-stopped | 10 MB × 5 files |
+| **worker**     | Reuses backend image     | unless-stopped | 10 MB × 5 files   |
+
+All services include healthchecks. The backend healthcheck verifies `/api/v1/health`
+returns `"healthy"` for status, database, and redis before dependents start.
+
+### Backup & Restore
+
+```bash
+# Backup (writes to backups/ directory by default)
+./scripts/backup_db.sh
+# Or specify a path:
+./scripts/backup_db.sh backups/manual_snapshot.sql
+
+# Restore from a backup
+./scripts/restore_db.sh backups/nexus_backup_20260101_120000.sql
+```
+
+Both scripts check that the postgres container is running before proceeding.
+
+### Rotating Secrets Safely
+
+When rotating secrets (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `DEMO_UNLOCK_CODE`,
+`BOOTSTRAP_ADMIN_CODE`, or API keys):
+
+1. **Back up the database** before any password change:
+   ```bash
+   ./scripts/backup_db.sh
+   ```
+
+2. **Edit `.env`** with the new values. Never commit `.env` to git.
+
+3. **For `POSTGRES_PASSWORD` changes only** – update the password inside PostgreSQL first:
+   ```bash
+   docker compose -f docker-compose.production.yml exec -T postgres \
+     psql -U jarvis -c "ALTER USER jarvis PASSWORD 'NEW_PASSWORD';"
+   ```
+
+4. **Restart the stack** to pick up new environment variables:
+   ```bash
+   docker compose -f docker-compose.production.yml up -d
+   ```
+
+5. **Verify health**:
+   ```bash
+   curl http://localhost:8000/api/v1/health
+   ```
+
+> **Note:** `JWT_SECRET_KEY` rotation invalidates all existing JWT tokens.
+> Users will need to re-authenticate.
 
 ### Environment Variables
 
