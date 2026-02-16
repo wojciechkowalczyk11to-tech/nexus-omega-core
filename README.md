@@ -103,6 +103,8 @@ POSTGRES_PASSWORD=changeme
 
 ## 📊 Database Schema
 
+> **Note:** The Postgres image must include pgvector (`pgvector/pgvector:pg16`) because migrations run `CREATE EXTENSION vector` for RAG embedding support.
+
 **11 Tables:**
 - `users` - User accounts with RBAC
 - `chat_sessions` - Conversation sessions with snapshots
