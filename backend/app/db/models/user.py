@@ -5,7 +5,7 @@ User model representing Telegram users with roles and subscriptions.
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, String
+from sqlalchemy import BigInteger, Boolean, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -43,6 +43,9 @@ class User(Base):
     # Subscription
     subscription_tier: Mapped[str | None] = mapped_column(String(50), nullable=True)
     subscription_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    # Credits
+    credits_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Preferences
     default_mode: Mapped[str] = mapped_column(String(50), default="eco", nullable=False)
