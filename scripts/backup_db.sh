@@ -34,7 +34,7 @@ fi
 
 # ── dump ─────────────────────────────────────────────────────────────
 log "Dumping database '$DB_NAME' from container '$CONTAINER' …"
-docker exec -t "$CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" > "$OUTPUT"
+docker exec "$CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" > "$OUTPUT"
 
 SIZE=$(wc -c < "$OUTPUT" | tr -d ' ')
 log "Backup complete: $OUTPUT ($SIZE bytes)"
