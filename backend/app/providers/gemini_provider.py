@@ -91,7 +91,7 @@ class GeminiProvider(BaseProvider):
                 output_tokens=output_tokens,
                 cost_usd=cost_usd,
                 latency_ms=latency_ms,
-                finish_reason="stop",
+                raw_response={"usage_metadata": response.usage_metadata} if response.usage_metadata else None,
             )
 
         except Exception as e:
