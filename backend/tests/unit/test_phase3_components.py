@@ -12,8 +12,9 @@ Tests:
 
 import os
 import tempfile
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,16 +39,31 @@ def _ensure_test_env() -> None:
         sys.modules.setdefault(mod, MagicMock())
 
 
+def _make_mock_model() -> MagicMock:
+    """Create a mock SentenceTransformer that returns fixed 384-dim vectors."""
+    mock_model = MagicMock()
+    mock_model.encode = MagicMock(
+        side_effect=lambda texts, **kwargs: (
+            np.array([[float(i % 10) / 10.0] * 384 for i in range(len(texts))])
+            if isinstance(texts, list)
+            else np.array([0.1] * 384)
+        )
+    )
+    return mock_model
+
+
 # Embedding Service Tests
 
 
 @pytest.mark.asyncio
 async def test_embedding_service_single_text():
     """Test generating embedding for single text."""
-    from app.services.embedding_service import embed_text
+    from app.services.embedding_service import EmbeddingService, embed_text
 
-    text = "This is a test sentence for embedding generation."
-    embedding = await embed_text(text)
+    with patch.object(EmbeddingService, "_load_model", return_value=_make_mock_model()):
+        EmbeddingService._model = None  # Reset cached model
+        text = "This is a test sentence for embedding generation."
+        embedding = await embed_text(text)
 
     assert isinstance(embedding, list)
     assert len(embedding) == 384  # all-MiniLM-L6-v2 dimensions
@@ -57,14 +73,16 @@ async def test_embedding_service_single_text():
 @pytest.mark.asyncio
 async def test_embedding_service_batch():
     """Test generating embeddings for multiple texts."""
-    from app.services.embedding_service import embed_texts
+    from app.services.embedding_service import EmbeddingService, embed_texts
 
-    texts = [
-        "First test sentence.",
-        "Second test sentence.",
-        "Third test sentence.",
-    ]
-    embeddings = await embed_texts(texts)
+    with patch.object(EmbeddingService, "_load_model", return_value=_make_mock_model()):
+        EmbeddingService._model = None  # Reset cached model
+        texts = [
+            "First test sentence.",
+            "Second test sentence.",
+            "Third test sentence.",
+        ]
+        embeddings = await embed_texts(texts)
 
     assert len(embeddings) == 3
     assert all(len(emb) == 384 for emb in embeddings)
@@ -73,8 +91,9 @@ async def test_embedding_service_batch():
 @pytest.mark.asyncio
 async def test_embedding_service_empty_text():
     """Test handling empty text."""
-    from app.services.embedding_service import embed_text
+    from app.services.embedding_service import EmbeddingService, embed_text
 
+    EmbeddingService._model = None  # Reset cached model
     embedding = await embed_text("")
 
     assert len(embedding) == 384
@@ -389,11 +408,13 @@ async def test_github_devin_tool_directory_size():
 @pytest.mark.asyncio
 async def test_embedding_to_rag_integration():
     """Test integration between embedding service and RAG."""
-    from app.services.embedding_service import embed_text
+    from app.services.embedding_service import EmbeddingService, embed_text
 
-    # Generate embedding
-    text = "Test document for RAG indexing"
-    embedding = await embed_text(text)
+    with patch.object(EmbeddingService, "_load_model", return_value=_make_mock_model()):
+        EmbeddingService._model = None  # Reset cached model
+        # Generate embedding
+        text = "Test document for RAG indexing"
+        embedding = await embed_text(text)
 
     # Verify embedding can be used in RAG
     assert len(embedding) == 384
@@ -429,13 +450,15 @@ async def test_embedding_batch_performance():
     """Test embedding batch generation performance."""
     import time
 
-    from app.services.embedding_service import embed_texts
+    from app.services.embedding_service import EmbeddingService, embed_texts
 
-    texts = [f"Test sentence number {i}" for i in range(50)]
+    with patch.object(EmbeddingService, "_load_model", return_value=_make_mock_model()):
+        EmbeddingService._model = None  # Reset cached model
+        texts = [f"Test sentence number {i}" for i in range(50)]
 
-    start_time = time.time()
-    embeddings = await embed_texts(texts, batch_size=32)
-    elapsed = time.time() - start_time
+        start_time = time.time()
+        embeddings = await embed_texts(texts, batch_size=32)
+        elapsed = time.time() - start_time
 
     assert len(embeddings) == 50
     # Should complete in reasonable time (< 5 seconds on CPU)

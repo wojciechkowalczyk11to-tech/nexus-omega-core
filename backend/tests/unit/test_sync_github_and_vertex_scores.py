@@ -78,8 +78,17 @@ def test_sync_github_repo_returns_indexed_file_count_and_cleans_tempdir(
 
 
 @pytest.mark.asyncio
-async def test_vertex_search_uses_rank_based_scores() -> None:
+async def test_vertex_search_uses_rank_based_scores(monkeypatch: pytest.MonkeyPatch) -> None:
     """Scores should decrease with result position."""
+    import app.tools.vertex_tool as vertex_module
+
+    # discoveryengine may be None if google-cloud-discoveryengine is not installed.
+    # Provide a minimal mock so SearchRequest can be instantiated.
+    mock_discoveryengine = types.SimpleNamespace(
+        SearchRequest=lambda **kwargs: types.SimpleNamespace(**kwargs),
+        SearchServiceClient=lambda: None,
+    )
+    monkeypatch.setattr(vertex_module, "discoveryengine", mock_discoveryengine)
 
     class FakeDocument:
         def __init__(self, title: str) -> None:

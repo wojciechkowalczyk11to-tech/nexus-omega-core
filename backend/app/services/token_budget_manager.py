@@ -145,9 +145,8 @@ class PrioritizedMessage:
 # Context window sizes for known models
 MODEL_TOKEN_LIMITS: dict[str, int] = {
     # Gemini
-    "gemini-2.0-flash-exp": 1_000_000,
-    "gemini-2.0-flash-thinking-exp-1219": 32_000,
-    "gemini-exp-1206": 2_000_000,
+    "gemini-2.0-flash": 1_000_000,
+    "gemini-2.0-flash-lite": 1_000_000,
     "gemini-1.5-flash": 1_000_000,
     "gemini-1.5-pro": 2_000_000,
     # OpenAI

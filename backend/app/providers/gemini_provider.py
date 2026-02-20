@@ -4,7 +4,8 @@ import asyncio
 import time
 from typing import Any
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 
 from app.core.exceptions import ProviderError
 from app.core.logging_config import get_logger
@@ -18,16 +19,15 @@ class GeminiProvider(BaseProvider):
 
     # Model mapping for profiles
     PROFILE_MODELS = {
-        "eco": "gemini-2.0-flash-exp",
-        "smart": "gemini-2.0-flash-thinking-exp-1219",
-        "deep": "gemini-exp-1206",
+        "eco": "gemini-2.0-flash",
+        "smart": "gemini-2.0-flash",
+        "deep": "gemini-1.5-pro",
     }
 
     # Pricing per 1M tokens (USD)
     PRICING = {
-        "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},  # Free tier
-        "gemini-2.0-flash-thinking-exp-1219": {"input": 0.0, "output": 0.0},  # Free tier
-        "gemini-exp-1206": {"input": 0.0, "output": 0.0},  # Free tier
+        "gemini-2.0-flash": {"input": 0.075, "output": 0.30},
+        "gemini-2.0-flash-lite": {"input": 0.0375, "output": 0.15},
         "gemini-1.5-flash": {"input": 0.075, "output": 0.30},
         "gemini-1.5-pro": {"input": 1.25, "output": 5.0},
     }
@@ -35,8 +35,9 @@ class GeminiProvider(BaseProvider):
     def __init__(self, api_key: str | None = None) -> None:
         """Initialize Gemini provider."""
         super().__init__(api_key)
+        self._client: genai.Client | None = None
         if self.api_key:
-            genai.configure(api_key=self.api_key)
+            self._client = genai.Client(api_key=self.api_key)
 
     async def generate(
         self,
@@ -47,50 +48,40 @@ class GeminiProvider(BaseProvider):
         **kwargs: Any,
     ) -> ProviderResponse:
         """Generate completion using Gemini."""
-        if not self.is_available():
+        if not self.is_available() or self._client is None:
             raise ProviderError("Gemini API key not configured", {"provider": "gemini"})
 
         start_time = time.time()
 
         try:
-            # Convert messages to Gemini format
-            gemini_messages = self._convert_messages(messages)
+            contents, system_instruction = self._convert_messages(messages)
 
-            # Create model
-            model_instance = genai.GenerativeModel(model)
-
-            # Generate
-            generation_config = genai.GenerationConfig(
+            config = genai_types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                system_instruction=system_instruction,
             )
 
-            # Run synchronous generate_content in executor to avoid blocking event loop
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: model_instance.generate_content(
-                    gemini_messages,
-                    generation_config=generation_config,
+                lambda: self._client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=config,
                 ),
             )
 
-            # Extract response
-            content = response.text
-            finish_reason = "stop"
+            content = response.text or ""
 
-            # Get token counts
             try:
-                input_tokens = response.usage_metadata.prompt_token_count
-                output_tokens = response.usage_metadata.candidates_token_count
-            except (AttributeError, KeyError):
-                # Fallback estimation
+                input_tokens = response.usage_metadata.prompt_token_count or 0
+                output_tokens = response.usage_metadata.candidates_token_count or 0
+            except (AttributeError, TypeError):
                 input_tokens = sum(len(m["content"].split()) * 2 for m in messages)
                 output_tokens = len(content.split()) * 2
 
-            # Calculate cost
             cost_usd = self.calculate_cost(model, input_tokens, output_tokens)
-
             latency_ms = int((time.time() - start_time) * 1000)
 
             return ProviderResponse(
@@ -100,8 +91,7 @@ class GeminiProvider(BaseProvider):
                 output_tokens=output_tokens,
                 cost_usd=cost_usd,
                 latency_ms=latency_ms,
-                finish_reason=finish_reason,
-                raw_response={"usage_metadata": response.usage_metadata._pb},
+                finish_reason="stop",
             )
 
         except Exception as e:
@@ -117,11 +107,9 @@ class GeminiProvider(BaseProvider):
 
     def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for Gemini request."""
-        pricing = self.PRICING.get(model, {"input": 0.0, "output": 0.0})
-
+        pricing = self.PRICING.get(model, {"input": 0.075, "output": 0.30})
         input_cost = (input_tokens / 1_000_000) * pricing["input"]
         output_cost = (output_tokens / 1_000_000) * pricing["output"]
-
         return input_cost + output_cost
 
     @property
@@ -134,29 +122,36 @@ class GeminiProvider(BaseProvider):
         """Display name."""
         return "Google Gemini"
 
-    def _convert_messages(self, messages: list[dict[str, str]]) -> list[dict[str, str]]:
+    def _convert_messages(
+        self, messages: list[dict[str, str]]
+    ) -> tuple[list[genai_types.Content], str | None]:
         """
-        Convert OpenAI-style messages to Gemini format.
-
-        Args:
-            messages: List of message dicts
+        Convert OpenAI-style messages to google.genai format.
 
         Returns:
-            Gemini-formatted messages
+            Tuple of (contents list, system_instruction string or None)
         """
-        gemini_messages = []
+        contents: list[genai_types.Content] = []
+        system_parts: list[str] = []
 
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
 
-            # Map roles
             if role == "system":
-                # Gemini doesn't have system role, prepend to first user message
-                gemini_messages.append({"role": "user", "parts": [f"[System] {content}"]})
+                system_parts.append(content)
             elif role == "user":
-                gemini_messages.append({"role": "user", "parts": [content]})
+                contents.append(
+                    genai_types.Content(
+                        role="user", parts=[genai_types.Part(text=content)]
+                    )
+                )
             elif role == "assistant":
-                gemini_messages.append({"role": "model", "parts": [content]})
+                contents.append(
+                    genai_types.Content(
+                        role="model", parts=[genai_types.Part(text=content)]
+                    )
+                )
 
-        return gemini_messages
+        system_instruction = "\n\n".join(system_parts) if system_parts else None
+        return contents, system_instruction
