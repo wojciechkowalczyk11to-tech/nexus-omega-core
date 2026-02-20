@@ -17,14 +17,14 @@ Modele w kolejności eskalacji:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-class CostPreference(str, Enum):
+class CostPreference(StrEnum):
     """User's cost preference."""
 
     LOW = "low"  # Minimize costs, accept lower quality
@@ -32,7 +32,7 @@ class CostPreference(str, Enum):
     QUALITY = "quality"  # Prioritize quality over cost
 
 
-class ModelTier(str, Enum):
+class ModelTier(StrEnum):
     """Model cost/capability tier."""
 
     ULTRA_CHEAP = "ultra_cheap"  # ~$0.10 per 1M tokens

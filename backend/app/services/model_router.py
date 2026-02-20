@@ -19,11 +19,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class DifficultyLevel(str, Enum):
+class DifficultyLevel(StrEnum):
     """Difficulty levels for query classification."""
 
     EASY = "easy"
@@ -31,7 +31,7 @@ class DifficultyLevel(str, Enum):
     HARD = "hard"
 
 
-class Profile(str, Enum):
+class Profile(StrEnum):
     """AI profile types."""
 
     ECO = "eco"
@@ -39,7 +39,7 @@ class Profile(str, Enum):
     DEEP = "deep"
 
 
-class QueryIntent(str, Enum):
+class QueryIntent(StrEnum):
     """Detected intent of the user query."""
 
     FACTUAL = "factual"  # Simple fact lookup

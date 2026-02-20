@@ -267,8 +267,7 @@ async def test_expected_columns_exist(schema_engine):
             )
             for col in expected_cols:
                 assert col in columns, (
-                    f"Column '{col}' missing from table '{table_name}'. "
-                    f"Existing columns: {columns}"
+                    f"Column '{col}' missing from table '{table_name}'. Existing columns: {columns}"
                 )
 
 

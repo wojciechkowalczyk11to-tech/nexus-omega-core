@@ -142,15 +142,11 @@ class GeminiProvider(BaseProvider):
                 system_parts.append(content)
             elif role == "user":
                 contents.append(
-                    genai_types.Content(
-                        role="user", parts=[genai_types.Part(text=content)]
-                    )
+                    genai_types.Content(role="user", parts=[genai_types.Part(text=content)])
                 )
             elif role == "assistant":
                 contents.append(
-                    genai_types.Content(
-                        role="model", parts=[genai_types.Part(text=content)]
-                    )
+                    genai_types.Content(role="model", parts=[genai_types.Part(text=content)])
                 )
 
         system_instruction = "\n\n".join(system_parts) if system_parts else None
