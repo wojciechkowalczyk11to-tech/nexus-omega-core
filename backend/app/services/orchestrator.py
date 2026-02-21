@@ -965,25 +965,29 @@ class Orchestrator:
         start_time = time.time()
 
         try:
-            import google.generativeai as genai
+            from google import genai
+            from google.genai import types as genai_types
+
+            if not getattr(provider, "_client", None):
+                provider._client = genai.Client(api_key=provider.api_key)
 
             # Convert messages to Gemini format
-            gemini_messages = provider._convert_messages(messages)
+            contents, system_instruction = provider._convert_messages(messages)
 
-            # Create model with tools
-            gemini_tools = genai.protos.Tool(
+            # Create model config with tools
+            gemini_tools = genai_types.Tool(
                 function_declarations=[
-                    genai.protos.FunctionDeclaration(
+                    genai_types.FunctionDeclaration(
                         name=t["name"],
                         description=t["description"],
-                        parameters=genai.protos.Schema(
-                            type=genai.protos.Type.OBJECT,
+                        parameters=genai_types.Schema(
+                            type=genai_types.Type.OBJECT,
                             properties={
-                                pname: genai.protos.Schema(
+                                pname: genai_types.Schema(
                                     type=getattr(
-                                        genai.protos.Type,
-                                        pdef.get("type", "STRING"),
-                                        genai.protos.Type.STRING,
+                                        genai_types.Type,
+                                        pdef.get("type", "STRING").upper(),
+                                        genai_types.Type.STRING,
                                     ),
                                     description=pdef.get("description", ""),
                                 )
@@ -998,22 +1002,20 @@ class Orchestrator:
                 ]
             )
 
-            model_instance = genai.GenerativeModel(
-                model,
-                tools=[gemini_tools],
-            )
-
-            generation_config = genai.GenerationConfig(
+            generation_config = genai_types.GenerateContentConfig(
                 temperature=0.7,
                 max_output_tokens=2048,
+                system_instruction=system_instruction,
+                tools=[gemini_tools],
             )
 
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: model_instance.generate_content(
-                    gemini_messages,
-                    generation_config=generation_config,
+                lambda: provider._client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=generation_config,
                 ),
             )
 
@@ -1021,8 +1023,8 @@ class Orchestrator:
             content = ""
             tool_calls_data = []
 
-            for candidate in response.candidates:
-                for part in candidate.content.parts:
+            for candidate in response.candidates or []:
+                for part in candidate.content.parts if candidate.content else []:
                     if hasattr(part, "text") and part.text:
                         content += part.text
                     if hasattr(part, "function_call") and part.function_call:
@@ -1037,9 +1039,9 @@ class Orchestrator:
 
             # Token counts
             try:
-                input_tokens = response.usage_metadata.prompt_token_count
-                output_tokens = response.usage_metadata.candidates_token_count
-            except (AttributeError, KeyError):
+                input_tokens = response.usage_metadata.prompt_token_count or 0
+                output_tokens = response.usage_metadata.candidates_token_count or 0
+            except AttributeError:
                 input_tokens = sum(len(m.get("content", "").split()) * 2 for m in messages)
                 output_tokens = len(content.split()) * 2
 
