@@ -734,7 +734,7 @@ class Orchestrator:
                 continue
             except Exception as e:
                 logger.warning(f"Provider {prov_name} unexpected error: {e}")
-                last_error = ProviderError(prov_name, str(e))
+                last_error = ProviderError(str(e), {"provider": prov_name})
                 continue
 
         # All providers failed
