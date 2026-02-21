@@ -84,7 +84,7 @@ async def provider_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             for name, desc in AVAILABLE_PROVIDERS.items():
                 marker = " 👈" if name == current_provider else ""
                 lines.append(f"  `{name}` — {desc}{marker}")
-            lines.append(f"\n**Użycie:**")
+            lines.append("\n**Użycie:**")
             lines.append("`/provider grok` — wymuszenie Grok")
             lines.append("`/provider claude` — wymuszenie Claude")
             lines.append("`/provider auto` — powrót do automatycznego routingu")
