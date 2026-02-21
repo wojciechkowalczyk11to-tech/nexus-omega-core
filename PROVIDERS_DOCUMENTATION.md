@@ -79,7 +79,7 @@ Każdy provider zwraca obiekt `ProviderResponse` ze standardowymi polami:
 
 | # | Provider | Modele | Tier cenowy | Dostęp DEMO | Dostęp FULL | Klucz API |
 |---|----------|--------|-------------|-------------|-------------|-----------|
-| 1 | **Google Gemini** | gemini-2.0-flash-exp, gemini-2.0-flash-thinking-exp-1219, gemini-exp-1206 | Darmowy (free tier) | ✅ | ✅ | `GEMINI_API_KEY` |
+| 1 | **Google Gemini** | gemini-2.0-flash, gemini-2.0-flash-thinking-exp, gemini-2.5-pro-preview-05-06 | Płatny (z free tier) | ✅ | ✅ | `GEMINI_API_KEY` |
 | 2 | **DeepSeek** | deepseek-chat, deepseek-reasoner | Bardzo tani | ✅ (50/dzień) | ✅ | `DEEPSEEK_API_KEY` |
 | 3 | **Groq** | llama-3.3-70b-versatile | Darmowy | ✅ | ✅ | `GROQ_API_KEY` |
 | 4 | **OpenRouter** | llama-3.2-3b-instruct:free, llama-3.1-8b-instruct:free | Darmowy (free tier) | ✅ | ✅ | `OPENROUTER_API_KEY` |
@@ -105,9 +105,9 @@ Google Gemini to główny provider do zadań ekonomicznych (profil ECO). Oferuje
 
 | Model | Profil | Okno kontekstu | Koszt input / 1M tokenów | Koszt output / 1M tokenów | Uwagi |
 |-------|--------|----------------|---------------------------|----------------------------|-------|
-| `gemini-2.0-flash-exp` | ECO | 1 000 000 | $0.00 | $0.00 | Darmowy, szybki, eksperymentalny |
-| `gemini-2.0-flash-thinking-exp-1219` | SMART | 32 000 | $0.00 | $0.00 | Darmowy, z reasoning |
-| `gemini-exp-1206` | DEEP | 2 000 000 | $0.00 | $0.00 | Darmowy, największe okno kontekstu |
+| `gemini-2.0-flash` | ECO | 1 000 000 | $0.10 | $0.40 | Szybki, produkcyjny |
+| `gemini-2.0-flash-thinking-exp` | SMART | 32 000 | $0.00 | $0.00 | Darmowy, z reasoning |
+| `gemini-2.5-pro-preview-05-06` | DEEP | 2 000 000 | $1.25 | $10.00 | Najnowszy, najwyższa jakość |
 | `gemini-1.5-flash` | (dodatkowy) | 1 000 000 | $0.075 | $0.30 | Płatny, produkcyjny |
 | `gemini-1.5-pro` | (dodatkowy) | 2 000 000 | $1.25 | $5.00 | Płatny, najwyższa jakość |
 
@@ -322,7 +322,7 @@ NexusOmegaCore implementuje trzy profile jakościowe, które wpływają na dobó
 
 | Provider | Model ECO |
 |----------|-----------|
-| Gemini | `gemini-2.0-flash-exp` |
+| Gemini | `gemini-2.0-flash` |
 | DeepSeek | `deepseek-chat` |
 | Groq | `llama-3.3-70b-versatile` |
 | OpenRouter | `meta-llama/llama-3.2-3b-instruct:free` |
@@ -339,7 +339,7 @@ NexusOmegaCore implementuje trzy profile jakościowe, które wpływają na dobó
 
 | Provider | Model SMART |
 |----------|------------|
-| Gemini | `gemini-2.0-flash-thinking-exp-1219` |
+| Gemini | `gemini-2.0-flash-thinking-exp` |
 | DeepSeek | `deepseek-reasoner` |
 | Groq | `llama-3.3-70b-versatile` |
 | OpenRouter | `meta-llama/llama-3.1-8b-instruct:free` |
@@ -357,7 +357,7 @@ NexusOmegaCore implementuje trzy profile jakościowe, które wpływają na dobó
 
 | Provider | Model DEEP |
 |----------|-----------|
-| Gemini | `gemini-exp-1206` |
+| Gemini | `gemini-2.5-pro-preview-05-06` |
 | DeepSeek | `deepseek-reasoner` |
 | Groq | `llama-3.3-70b-versatile` |
 | OpenRouter | `meta-llama/llama-3.1-8b-instruct:free` |

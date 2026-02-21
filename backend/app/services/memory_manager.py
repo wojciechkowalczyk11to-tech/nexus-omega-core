@@ -268,7 +268,7 @@ Podsumowanie:"""
             # Call LLM with compression prompt
             response = await llm_provider.generate(
                 messages=[{"role": "user", "content": compression_prompt}],
-                model="gemini-2.0-flash-exp",  # Fast, cheap model
+                model="gemini-2.0-flash",  # Fast, cheap model
                 temperature=0.3,  # Low temperature for factual summary
                 max_tokens=500,
             )

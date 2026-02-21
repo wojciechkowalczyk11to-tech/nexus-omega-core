@@ -77,7 +77,7 @@ class SLMRouter:
             ),
             ModelConfig(
                 provider="gemini",
-                model="gemini-2.0-flash-exp",
+                model="gemini-2.0-flash",
                 tier=ModelTier.ULTRA_CHEAP,
                 cost_per_1m_input=0.10,
                 cost_per_1m_output=0.15,

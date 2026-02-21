@@ -17,17 +17,18 @@ class GeminiProvider(BaseProvider):
     """Google Gemini AI provider."""
 
     # Model mapping for profiles
+    # Default: Gemini 2.0 Flash (Preview) with reasoning across all profiles
     PROFILE_MODELS = {
-        "eco": "gemini-2.0-flash-exp",
-        "smart": "gemini-2.0-flash-thinking-exp-1219",
-        "deep": "gemini-exp-1206",
+        "eco": "gemini-2.0-flash",
+        "smart": "gemini-2.0-flash-thinking-exp",
+        "deep": "gemini-2.5-pro-preview-05-06",
     }
 
     # Pricing per 1M tokens (USD)
     PRICING = {
-        "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},  # Free tier
-        "gemini-2.0-flash-thinking-exp-1219": {"input": 0.0, "output": 0.0},  # Free tier
-        "gemini-exp-1206": {"input": 0.0, "output": 0.0},  # Free tier
+        "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
+        "gemini-2.0-flash-thinking-exp": {"input": 0.0, "output": 0.0},
+        "gemini-2.5-pro-preview-05-06": {"input": 1.25, "output": 10.0},
         "gemini-1.5-flash": {"input": 0.075, "output": 0.30},
         "gemini-1.5-pro": {"input": 1.25, "output": 5.0},
     }
