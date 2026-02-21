@@ -33,9 +33,9 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             await cache.set_user_mode(user.id, new_mode)
 
             mode_descriptions = {
-                "eco": "🌱 **ECO** - Szybki i darmowy (Gemini Flash, Groq)",
-                "smart": "🧠 **SMART** - Zbalansowany (DeepSeek Reasoner)",
-                "deep": "🔬 **DEEP** - Zaawansowany (GPT-4, Claude) - wymaga FULL_ACCESS",
+                "eco": "🌱 **ECO** - Szybki, ekonomiczny (Gemini 2.0 Flash, Groq)",
+                "smart": "🧠 **SMART** - Zbalansowany (DeepSeek Reasoner, Gemini Thinking)",
+                "deep": "🔬 **DEEP** - Zaawansowany (Gemini 2.5 Pro, GPT-4o, Claude) - wymaga FULL ACCESS",
             }
 
             await update.message.reply_text(
@@ -49,8 +49,8 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 **Dostępne tryby:**
 
-🌱 **ECO** - Szybki i darmowy
-   Providery: Gemini Flash, Groq, DeepSeek Chat
+🌱 **ECO** - Szybki, ekonomiczny
+   Providery: Gemini 2.0 Flash, Groq, DeepSeek Chat
    Koszt: ~$0
    Użyj: `/mode eco`
 
@@ -59,12 +59,13 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
    Koszt: ~$0.001-0.01 / zapytanie
    Użyj: `/mode smart`
 
-🔬 **DEEP** - Zaawansowany (wymaga FULL_ACCESS)
-   Providery: DeepSeek, GPT-4o, Claude Sonnet
+🔬 **DEEP** - Zaawansowany (wymaga FULL ACCESS)
+   Providery: DeepSeek, Gemini 2.5 Pro, GPT-4o, Claude Sonnet
    Koszt: ~$0.01-0.10 / zapytanie
    Użyj: `/mode deep`
 
 💡 **Wskazówka:** Bot automatycznie wybiera tryb na podstawie trudności zapytania.
+🔌 Użyj `/provider` aby wymusić konkretnego providera.
 """
 
             await update.message.reply_text(mode_info, parse_mode="Markdown")

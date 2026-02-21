@@ -19,6 +19,7 @@ from telegram_bot.handlers.chat_handler_streaming import chat_message_streaming
 from telegram_bot.handlers.document_handler import document_handler
 from telegram_bot.handlers.help_handler import help_command
 from telegram_bot.handlers.mode_handler import mode_command
+from telegram_bot.handlers.provider_handler import provider_command
 from telegram_bot.handlers.start_handler import start_command
 from telegram_bot.handlers.subscribe_handler import (
     buy_command,
@@ -66,6 +67,7 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("mode", mode_command))
+    application.add_handler(CommandHandler("provider", provider_command))
     application.add_handler(CommandHandler("unlock", unlock_command))
     application.add_handler(CommandHandler("subscribe", subscribe_command))
     application.add_handler(CommandHandler("buy", buy_command))

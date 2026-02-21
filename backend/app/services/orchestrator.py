@@ -266,7 +266,11 @@ class Orchestrator:
         logger.info(f"[{trace_id}] Step 4: Build context with token budget")
 
         # Determine provider and model for budget calculation
-        provider_chain = policy_result.provider_chain or ["gemini"]
+        # If provider_override is set, force that provider as the sole chain entry
+        if request.provider_override:
+            provider_chain = [request.provider_override]
+        else:
+            provider_chain = policy_result.provider_chain or ["gemini"]
         primary_provider = provider_chain[0]
 
         from app.providers.factory import ProviderFactory
