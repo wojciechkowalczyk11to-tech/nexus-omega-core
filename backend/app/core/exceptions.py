@@ -26,9 +26,9 @@ class PolicyDeniedError(AppException):
 class ProviderError(AppException):
     """Raised when a provider fails to generate a response."""
 
-    def __init__(self, provider: str, message: str, details: dict[str, Any] | None = None) -> None:
-        super().__init__(f"Błąd providera {provider}: {message}", details)
-        self.provider = provider
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(f"Błąd providera: {message}", details)
+        self.provider = details.get("provider", "unknown") if details else "unknown"
 
 
 class AllProvidersFailedError(AppException):
