@@ -122,7 +122,7 @@ Google Gemini to główny provider do zadań ekonomicznych (profil ECO). Oferuje
 
 #### Specyfika implementacji
 
-- Używa `genai.GenerativeModel` z synchronicznym `generate_content` opakownaym w `loop.run_in_executor` dla async kompatybilności
+- Używa `genai.GenerativeModel` z synchronicznym `generate_content` opakowanym w `loop.run_in_executor` dla async kompatybilności
 - Rola `system` jest mapowana na `user` z prefiksem `[System]`
 - Rola `assistant` jest mapowana na `model`
 
