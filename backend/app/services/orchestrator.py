@@ -1041,7 +1041,7 @@ class Orchestrator:
             try:
                 input_tokens = response.usage_metadata.prompt_token_count or 0
                 output_tokens = response.usage_metadata.candidates_token_count or 0
-            except (AttributeError, TypeError):
+            except AttributeError:
                 input_tokens = sum(len(m.get("content", "").split()) * 2 for m in messages)
                 output_tokens = len(content.split()) * 2
 
