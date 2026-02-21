@@ -91,7 +91,9 @@ class GeminiProvider(BaseProvider):
                 output_tokens=output_tokens,
                 cost_usd=cost_usd,
                 latency_ms=latency_ms,
-                raw_response={"usage_metadata": response.usage_metadata} if response.usage_metadata else None,
+                raw_response=(
+                    {"usage_metadata": response.usage_metadata} if response.usage_metadata else None
+                ),
             )
 
         except Exception as e:
@@ -134,20 +136,29 @@ class GeminiProvider(BaseProvider):
         contents: list[genai_types.Content] = []
         system_parts: list[str] = []
 
+        can_use_system_instruction = True
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
 
-            if role == "system":
+            if role == "system" and can_use_system_instruction:
                 system_parts.append(content)
+            elif role == "system":
+                contents.append(
+                    genai_types.Content(role="user", parts=[genai_types.Part(text=content)])
+                )
             elif role == "user":
+                can_use_system_instruction = False
                 contents.append(
                     genai_types.Content(role="user", parts=[genai_types.Part(text=content)])
                 )
             elif role == "assistant":
+                can_use_system_instruction = False
                 contents.append(
                     genai_types.Content(role="model", parts=[genai_types.Part(text=content)])
                 )
+            else:
+                can_use_system_instruction = False
 
         system_instruction = "\n\n".join(system_parts) if system_parts else None
         return contents, system_instruction
