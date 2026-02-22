@@ -18,33 +18,23 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 /start - Rozpocznij rozmowę
 /help - Ta wiadomość
 /mode - Zmień tryb AI (eco/smart/deep)
+/provider - Wybierz providera AI (grok/claude/auto)
 
 **Zarządzanie kontem:**
 /unlock <kod> - Odblokuj dostęp DEMO
-/subscribe - Kup subskrypcję FULL_ACCESS
-/usage - Statystyki użycia
+/subscribe - Kup subskrypcję FULL ACCESS
+/buy - Kup kredyty (Telegram Stars)
 
-**Sesje i pamięć:**
-/session - Zarządzaj sesjami
-/memory - Zarządzaj pamięcią absolutną
-/export - Eksportuj konwersację
-
-**Dokumenty (FULL_ACCESS):**
-/rag - Zarządzaj dokumentami RAG
-📎 Wyślij plik - Upload dokumentu
-
-**Admin (tylko ADMIN):**
-/admin - Panel administratora
-/stats - Statystyki systemu
-/invite - Generuj kod zaproszenia
+**Dokumenty (FULL ACCESS):**
+📎 Wyślij plik - Upload dokumentu do RAG
 
 **Tryby AI:**
-🌱 **ECO** - Szybki, darmowy (Gemini, Groq)
-🧠 **SMART** - Zbalansowany (DeepSeek Reasoner)
-🔬 **DEEP** - Zaawansowany (GPT-4, Claude)
+🌱 **ECO** - Szybki, ekonomiczny (Gemini Flash, Groq)
+🧠 **SMART** - Zbalansowany (DeepSeek Reasoner, Gemini Thinking)
+🔬 **DEEP** - Zaawansowany (Gemini 2.5 Pro, GPT-4o, Claude)
 
-**Providery:**
-- Google Gemini (Flash, Thinking, Exp)
+**Providery (wybierz przez /provider):**
+- Google Gemini (2.0 Flash, Thinking, 2.5 Pro)
 - DeepSeek (Chat, Reasoner)
 - Groq (Llama 3.3 70B)
 - OpenRouter (Llama free tier)
@@ -53,13 +43,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 - Anthropic Claude (Sonnet)
 
 **Funkcje:**
-✅ Multi-provider AI z fallback
-✅ Baza wiedzy (Vertex AI Search)
+✅ Multi-provider AI z automatycznym fallback
+✅ Wyszukiwanie w internecie (Brave Search)
 ✅ Dokumenty użytkownika (RAG)
-✅ Wyszukiwanie w internecie
-✅ Pamięć konwersacji
+✅ Pamięć konwersacji i preferencji
 ✅ Automatyczna klasyfikacja trudności
 ✅ Śledzenie kosztów
+✅ ReAct agent z narzędziami
 
 💬 Wyślij mi wiadomość, aby zacząć rozmowę!
 """

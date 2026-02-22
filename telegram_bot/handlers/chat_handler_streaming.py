@@ -46,6 +46,9 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
         # Get user mode
         mode = await cache.get_user_mode(user.id)
 
+        # Get user provider override
+        provider = await cache.get_user_provider(user.id)
+
         # Send typing indicator
         await update.message.chat.send_action("typing")
 
@@ -67,6 +70,7 @@ async def chat_message_streaming(update: Update, context: ContextTypes.DEFAULT_T
                 json={
                     "query": query,
                     "mode": mode,
+                    "provider": provider,
                 },
             ) as response,
         ):

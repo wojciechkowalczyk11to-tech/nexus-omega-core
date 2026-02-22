@@ -104,6 +104,33 @@ class UserCache:
         key = f"user_mode:{telegram_id}"
         await self.redis.set(key, mode)
 
+    async def get_user_provider(self, telegram_id: int) -> str | None:
+        """
+        Get user's preferred provider override.
+
+        Args:
+            telegram_id: Telegram user ID
+
+        Returns:
+            Provider name or None (auto-routing)
+        """
+        key = f"user_provider:{telegram_id}"
+        return await self.redis.get(key)
+
+    async def set_user_provider(self, telegram_id: int, provider: str | None) -> None:
+        """
+        Set user's preferred provider override.
+
+        Args:
+            telegram_id: Telegram user ID
+            provider: Provider name or None to clear (return to auto)
+        """
+        key = f"user_provider:{telegram_id}"
+        if provider is None:
+            await self.redis.delete(key)
+        else:
+            await self.redis.set(key, provider)
+
     async def increment_rate_limit(self, telegram_id: int, window: int = 60) -> int:
         """
         Increment rate limit counter.
