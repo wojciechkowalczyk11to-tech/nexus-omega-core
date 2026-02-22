@@ -81,7 +81,7 @@ async def provider_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             current_display = current_provider or "auto (automatyczny)"
             lines = [f"🔌 **Aktualny provider:** {current_display}\n"]
             lines.append("**Dostępni providerzy:**\n")
-            for name, desc in AVAILABLE_PROVIDERS.items():
+            for name, desc in sorted(AVAILABLE_PROVIDERS.items()):
                 marker = " 👈" if name == current_provider else ""
                 lines.append(f"  `{name}` — {desc}{marker}")
             lines.append("\n**Użycie:**")
