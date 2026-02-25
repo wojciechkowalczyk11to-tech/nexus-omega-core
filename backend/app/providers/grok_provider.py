@@ -19,15 +19,16 @@ class GrokProvider(BaseProvider):
 
     # Model mapping for profiles
     PROFILE_MODELS = {
-        "eco": "grok-beta",
-        "smart": "grok-beta",
-        "deep": "grok-beta",
+        "eco": "grok-3-mini-fast",
+        "smart": "grok-3-fast",
+        "deep": "grok-3",
     }
 
     # Pricing per 1M tokens (USD)
     PRICING = {
-        "grok-beta": {"input": 5.0, "output": 15.0},
-        "grok-2-latest": {"input": 5.0, "output": 15.0},
+        "grok-3-mini-fast": {"input": 0.30, "output": 0.50},
+        "grok-3-fast": {"input": 5.0, "output": 15.0},
+        "grok-3": {"input": 3.0, "output": 15.0},
     }
 
     def __init__(self, api_key: str | None = None) -> None:

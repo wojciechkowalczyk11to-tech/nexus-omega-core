@@ -1,0 +1,36 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nexus-telegram-bot
+  annotations:
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/vpc-access-connector: projects/${PROJECT_ID}/locations/${REGION}/connectors/nexus-vpc-connector
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+    spec:
+      containerConcurrency: 1
+      timeoutSeconds: 3600
+      containers:
+        - image: gcr.io/${PROJECT_ID}/nexus-telegram-bot:${IMAGE_TAG}
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: BACKEND_URL
+              value: https://nexus-backend-${PROJECT_HASH}-uc.a.run.app
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: telegram-bot-token
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: redis-url
