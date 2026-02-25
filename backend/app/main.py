@@ -84,7 +84,11 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
-    cors_origins = settings.cors_origins if hasattr(settings, 'cors_origins') and settings.cors_origins else ["*"]
+    cors_origins = (
+        settings.cors_origins
+        if hasattr(settings, "cors_origins") and settings.cors_origins
+        else ["*"]
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,

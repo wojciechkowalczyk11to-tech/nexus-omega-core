@@ -156,6 +156,7 @@ class PolicyEngine:
         # Check subscription expiration
         if role in ("FULL_ACCESS",) and user.subscription_expires_at:
             from datetime import UTC, datetime
+
             if user.subscription_expires_at < datetime.now(UTC):
                 # Subscription expired — degrade to DEMO
                 role = "DEMO"

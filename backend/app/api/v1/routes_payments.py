@@ -29,6 +29,7 @@ SUBSCRIPTION_TIERS = {
 
 class TelegramStarsVerifyRequest(BaseModel):
     """Request to verify a Telegram Stars payment."""
+
     telegram_id: int
     tier: str
     stars_paid: int
@@ -37,6 +38,7 @@ class TelegramStarsVerifyRequest(BaseModel):
 
 class TelegramStarsVerifyResponse(BaseModel):
     """Response after verifying a Telegram Stars payment."""
+
     success: bool
     message: str
     subscription_expires_at: datetime | None = None
@@ -45,6 +47,7 @@ class TelegramStarsVerifyResponse(BaseModel):
 
 class SubscriptionStatusResponse(BaseModel):
     """Subscription status response."""
+
     telegram_id: int
     role: str
     subscription_tier: str | None
@@ -54,12 +57,14 @@ class SubscriptionStatusResponse(BaseModel):
 
 class CancelSubscriptionRequest(BaseModel):
     """Request to cancel a subscription."""
+
     telegram_id: int
     reason: str = ""
 
 
 class RevenueAnalytics(BaseModel):
     """Revenue analytics response."""
+
     total_stars_collected: int
     active_subscriptions: int
     subscriptions_by_tier: dict[str, int]
@@ -90,9 +95,7 @@ async def verify_telegram_stars_payment(
         )
 
     # Find user
-    result = await db.execute(
-        select(User).where(User.telegram_id == request.telegram_id)
-    )
+    result = await db.execute(select(User).where(User.telegram_id == request.telegram_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
@@ -148,9 +151,7 @@ async def get_subscription_status(
     current_user: User = Depends(get_current_user),
 ) -> SubscriptionStatusResponse:
     """Get subscription status for a user."""
-    result = await db.execute(
-        select(User).where(User.telegram_id == telegram_id)
-    )
+    result = await db.execute(select(User).where(User.telegram_id == telegram_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
@@ -159,10 +160,7 @@ async def get_subscription_status(
         )
 
     now = datetime.now(UTC)
-    is_active = (
-        user.subscription_expires_at is not None
-        and user.subscription_expires_at > now
-    )
+    is_active = user.subscription_expires_at is not None and user.subscription_expires_at > now
 
     return SubscriptionStatusResponse(
         telegram_id=user.telegram_id,
@@ -180,9 +178,7 @@ async def cancel_subscription(
     admin_user: User = Depends(get_current_admin_user),
 ) -> dict[str, str]:
     """Cancel a user's subscription (admin only)."""
-    result = await db.execute(
-        select(User).where(User.telegram_id == request.telegram_id)
-    )
+    result = await db.execute(select(User).where(User.telegram_id == request.telegram_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
@@ -195,11 +191,12 @@ async def cancel_subscription(
     user.subscription_expires_at = None
     await db.flush()
 
-    logger.info(
-        f"Subscription cancelled: user={request.telegram_id}, reason={request.reason}"
-    )
+    logger.info(f"Subscription cancelled: user={request.telegram_id}, reason={request.reason}")
 
-    return {"status": "cancelled", "message": f"Subscription cancelled for user {request.telegram_id}"}
+    return {
+        "status": "cancelled",
+        "message": f"Subscription cancelled for user {request.telegram_id}",
+    }
 
 
 @router.get("/admin/analytics/revenue", response_model=RevenueAnalytics)
@@ -211,9 +208,7 @@ async def get_revenue_analytics(
     now = datetime.now(UTC)
 
     # Total stars collected
-    total_stars_result = await db.execute(
-        select(func.coalesce(func.sum(Payment.amount_stars), 0))
-    )
+    total_stars_result = await db.execute(select(func.coalesce(func.sum(Payment.amount_stars), 0)))
     total_stars = total_stars_result.scalar() or 0
 
     # Active subscriptions
@@ -241,9 +236,7 @@ async def get_revenue_analytics(
     total_users = total_users_result.scalar() or 0
 
     # Paying users (ever paid)
-    paying_users_result = await db.execute(
-        select(func.count(func.distinct(Payment.user_id)))
-    )
+    paying_users_result = await db.execute(select(func.count(func.distinct(Payment.user_id))))
     paying_users = paying_users_result.scalar() or 0
 
     # ARPU

@@ -94,7 +94,9 @@ class Settings(BaseSettings):
     log_json: bool = Field(default=True, description="Use JSON logging format")
 
     # === CORS ===
-    cors_origins: list[str] = Field(default_factory=lambda: ["*"], description="Allowed CORS origins")
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["*"], description="Allowed CORS origins"
+    )
 
     # === Limits ===
     demo_grok_daily: int = Field(default=5, description="Daily Grok calls for DEMO users")
