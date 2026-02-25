@@ -1,0 +1,99 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nexus-backend
+  annotations:
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/vpc-access-connector: projects/${PROJECT_ID}/locations/${REGION}/connectors/nexus-vpc-connector
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: gcr.io/${PROJECT_ID}/nexus-backend:${IMAGE_TAG}
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: redis-url
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: telegram-bot-token
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: jwt-secret-key
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: gemini-api-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: openai-api-key
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: anthropic-api-key
+            - name: XAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: xai-api-key
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: deepseek-api-key
+            - name: DEMO_UNLOCK_CODE
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: demo-unlock-code
+            - name: BOOTSTRAP_ADMIN_CODE
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: bootstrap-admin-code
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: latest
+                  name: postgres-password
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            periodSeconds: 30
+            failureThreshold: 3

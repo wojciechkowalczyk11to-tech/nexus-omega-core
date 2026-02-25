@@ -1,3 +1,4 @@
+# Local development / VM fallback. For production use GCP (infra/gcp/)
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -104,6 +105,9 @@ services:
         max-file: "5"
 
   worker:
+    build:
+      context: ./backend
+      dockerfile: ../infra/Dockerfile.backend
     image: nexus-backend:latest
     container_name: nexus-worker
     command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]

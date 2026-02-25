@@ -4,6 +4,7 @@ Loads all environment variables from .env file.
 """
 
 import json
+from functools import lru_cache
 from typing import Any
 
 from pydantic import Field, field_validator
@@ -92,6 +93,9 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
     log_json: bool = Field(default=True, description="Use JSON logging format")
 
+    # === CORS ===
+    cors_origins: list[str] = Field(default_factory=lambda: ["*"], description="Allowed CORS origins")
+
     # === Limits ===
     demo_grok_daily: int = Field(default=5, description="Daily Grok calls for DEMO users")
     demo_web_daily: int = Field(default=5, description="Daily web search calls for DEMO users")
@@ -132,6 +136,19 @@ class Settings(BaseSettings):
                 return []
         return v if isinstance(v, list) else []
 
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            if not v or v == "[]":
+                return ["*"]
+            try:
+                parsed = json.loads(v)
+                return [str(origin) for origin in parsed]
+            except json.JSONDecodeError:
+                return [o.strip() for o in v.split(",") if o.strip()]
+        return v if isinstance(v, list) else ["*"]
+
     def get_provider_policy(self) -> dict[str, Any]:
         """Parse provider policy JSON."""
         try:
@@ -158,5 +175,11 @@ class Settings(BaseSettings):
             return []
 
 
+@lru_cache
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
+
+
 # Global settings instance
-settings = Settings()
+settings = get_settings()

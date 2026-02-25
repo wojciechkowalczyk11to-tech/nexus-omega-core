@@ -37,6 +37,7 @@ class Payment(Base):
     # Product/Plan details
     product_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     plan: Mapped[str] = mapped_column(String(50), nullable=False)  # starter, pro, ultra, enterprise
+    tier: Mapped[str | None] = mapped_column(String(50), nullable=True)  # full_month, full_week, deep_day
     amount_stars: Mapped[int] = mapped_column(Integer, nullable=False)
     stars_amount: Mapped[int] = mapped_column(Integer, nullable=False)  # Alias for compatibility
     credits_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

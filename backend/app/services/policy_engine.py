@@ -153,6 +153,13 @@ class PolicyEngine:
                 {"role": role, "authorized": False},
             )
 
+        # Check subscription expiration
+        if role in ("FULL_ACCESS",) and user.subscription_expires_at:
+            from datetime import UTC, datetime
+            if user.subscription_expires_at < datetime.now(UTC):
+                # Subscription expired — degrade to DEMO
+                role = "DEMO"
+
         # Check command access
         if action in self.COMMAND_ACCESS.get(role, {}) and not self.COMMAND_ACCESS[role][action]:
             raise PolicyDeniedError(

@@ -19,16 +19,17 @@ class GeminiProvider(BaseProvider):
     # Model mapping for profiles
     # Default: Gemini 2.0 Flash (Preview) with reasoning across all profiles
     PROFILE_MODELS = {
-        "eco": "gemini-2.0-flash",
-        "smart": "gemini-2.0-flash-thinking-exp",
+        "eco": "gemini-2.5-flash-preview-05-20",
+        "smart": "gemini-2.5-flash-preview-05-20",
         "deep": "gemini-2.5-pro-preview-05-06",
     }
 
     # Pricing per 1M tokens (USD)
     PRICING = {
-        "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
-        "gemini-2.0-flash-thinking-exp": {"input": 0.0, "output": 0.0},
+        "gemini-2.5-flash-preview-05-20": {"input": 0.15, "output": 0.60},
+        "gemini-2.5-flash-preview-05-20-thinking": {"input": 0.15, "output": 3.50},
         "gemini-2.5-pro-preview-05-06": {"input": 1.25, "output": 10.0},
+        "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
         "gemini-1.5-flash": {"input": 0.075, "output": 0.30},
         "gemini-1.5-pro": {"input": 1.25, "output": 5.0},
     }

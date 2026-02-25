@@ -21,14 +21,14 @@ class OpenAIProvider(BaseProvider):
     PROFILE_MODELS = {
         "eco": "gpt-4o-mini",
         "smart": "gpt-4o",
-        "deep": "gpt-4o",
+        "deep": "o3-mini",
     }
 
     # Pricing per 1M tokens (USD)
     PRICING = {
         "gpt-4o-mini": {"input": 0.15, "output": 0.60},
-        "gpt-4o": {"input": 2.5, "output": 10.0},
-        "gpt-4-turbo": {"input": 10.0, "output": 30.0},
+        "gpt-4o": {"input": 2.50, "output": 10.0},
+        "o3-mini": {"input": 1.10, "output": 4.40},
     }
 
     def __init__(self, api_key: str | None = None) -> None:

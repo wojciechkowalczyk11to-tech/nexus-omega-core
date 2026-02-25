@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import close_redis_pool, get_redis_pool
 from app.api.v1.router import api_router
+from app.core.config import settings
 from app.core.logging_config import get_logger, setup_logging
 from app.db.session import close_db, init_db
 
@@ -83,9 +84,10 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
+    cors_origins = settings.cors_origins if hasattr(settings, 'cors_origins') and settings.cors_origins else ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

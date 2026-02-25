@@ -20,15 +20,15 @@ class ClaudeProvider(BaseProvider):
     # Model mapping for profiles
     PROFILE_MODELS = {
         "eco": "claude-3-5-haiku-20241022",
-        "smart": "claude-3-5-sonnet-20241022",
-        "deep": "claude-3-5-sonnet-20241022",
+        "smart": "claude-sonnet-4-20250514",
+        "deep": "claude-opus-4-20250918",
     }
 
     # Pricing per 1M tokens (USD )
     PRICING = {
-        "claude-3-5-haiku-20241022": {"input": 0.8, "output": 4.0},
-        "claude-3-5-sonnet-20241022": {"input": 3.0, "output": 15.0},
-        "claude-3-opus-20240229": {"input": 15.0, "output": 75.0},
+        "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.0},
+        "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
+        "claude-opus-4-20250918": {"input": 15.0, "output": 75.0},
     }
 
     def __init__(self, api_key: str | None = None) -> None:
@@ -69,7 +69,7 @@ class ClaudeProvider(BaseProvider):
                 "model": model,
                 "messages": claude_messages,
                 "temperature": temperature,
-                "max_tokens": max_tokens,
+                "max_tokens": 32000 if model == "claude-opus-4-20250918" else max_tokens,
             }
 
             if system_message:
