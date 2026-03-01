@@ -88,7 +88,7 @@ class GroqProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"Groq generation error: {e}", exc_info=True)
+            logger.error("Groq generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"Groq generation failed: {str(e)}",
                 {"provider": "groq", "model": model},

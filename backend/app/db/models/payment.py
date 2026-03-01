@@ -41,7 +41,6 @@ class Payment(Base):
         String(50), nullable=True
     )  # full_month, full_week, deep_day
     amount_stars: Mapped[int] = mapped_column(Integer, nullable=False)
-    stars_amount: Mapped[int] = mapped_column(Integer, nullable=False)  # Alias for compatibility
     credits_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="XTR", nullable=False)
 

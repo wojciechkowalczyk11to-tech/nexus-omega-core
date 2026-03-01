@@ -216,7 +216,7 @@ class Sandbox:
         try:
             with open(abs_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-            logger.info(f"Read file: {abs_path} ({len(content)} chars)")
+            logger.info("Read file: %s (%s chars)", abs_path, len(content))
             return content
         except Exception as e:
             raise SandboxError(f"Failed to read file: {str(e)}", {"path": abs_path}) from e
@@ -269,7 +269,7 @@ class Sandbox:
         try:
             with open(abs_path, "w", encoding="utf-8") as f:
                 f.write(content)
-            logger.info(f"Wrote file: {abs_path} ({content_size} bytes)")
+            logger.info("Wrote file: %s (%s bytes)", abs_path, content_size)
             return abs_path
         except Exception as e:
             raise SandboxError(f"Failed to write file: {str(e)}", {"path": abs_path}) from e
@@ -354,7 +354,7 @@ class Sandbox:
                 os.remove(abs_path)
             elif os.path.isdir(abs_path):
                 shutil.rmtree(abs_path)
-            logger.info(f"Deleted: {abs_path}")
+            logger.info("Deleted: %s", abs_path)
             return True
         except Exception as e:
             raise SandboxError(f"Failed to delete: {str(e)}", {"path": abs_path}) from e
@@ -378,10 +378,10 @@ class Sandbox:
                         os.remove(file_path)
                         deleted_count += 1
                 except Exception as e:
-                    logger.warning(f"Failed to delete old file {file_path}: {e}")
+                    logger.warning("Failed to delete old file %s: %s", file_path, e)
 
         if deleted_count > 0:
-            logger.info(f"Cleaned up {deleted_count} old files for user {self.user_id}")
+            logger.info("Cleaned up %s old files for user %s", deleted_count, self.user_id)
 
         return deleted_count
 

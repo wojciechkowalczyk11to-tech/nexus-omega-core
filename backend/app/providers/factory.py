@@ -196,11 +196,11 @@ class ProviderFactory:
                 if i > 0:
                     fallback_used = True
 
-                logger.info(f"Provider {provider_name} succeeded")
+                logger.info("Provider %s succeeded", provider_name)
                 return response, provider_name, fallback_used
 
             except ProviderError as e:
-                logger.warning(f"Provider {provider_name} failed: {e.message}")
+                logger.warning("Provider %s failed: %s", provider_name, e.message)
                 last_error = e
                 continue
 

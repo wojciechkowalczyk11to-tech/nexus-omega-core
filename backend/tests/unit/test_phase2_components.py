@@ -831,10 +831,10 @@ class TestToolRegistrySchemaConsistency:
             required = openai_schema["function"]["parameters"]["required"]
 
             for param in tool.parameters:
-                assert (
-                    param.name in props
-                ), f"Missing param {param.name} in OpenAI schema for {tool.name}"
+                assert param.name in props, (
+                    f"Missing param {param.name} in OpenAI schema for {tool.name}"
+                )
                 if param.required:
-                    assert (
-                        param.name in required
-                    ), f"Required param {param.name} not in required list for {tool.name}"
+                    assert param.name in required, (
+                        f"Required param {param.name} not in required list for {tool.name}"
+                    )

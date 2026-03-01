@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default_factory=lambda: ["*"], description="Allowed CORS origins"
     )
+    cors_allowed_origins: list[str] = Field(
+        default_factory=list,
+        description="Comma-separated list of allowed CORS origins",
+    )
+    environment: str = Field(default="development", description="Runtime environment")
 
     # === Limits ===
     demo_grok_daily: int = Field(default=5, description="Daily Grok calls for DEMO users")

@@ -135,7 +135,7 @@ class GitHubDevinTool:
 
         # Check if already cloned
         if os.path.exists(repo_path):
-            logger.info(f"Repository {repo_name} already exists, pulling latest")
+            logger.info("Repository %s already exists, pulling latest", repo_name)
             try:
                 repo = Repo(repo_path)
                 origin = repo.remotes.origin
@@ -150,12 +150,12 @@ class GitHubDevinTool:
                     "branch": branch,
                 }
             except Exception as e:
-                logger.error(f"Failed to pull repository: {e}")
+                logger.error("Failed to pull repository: %s", e)
                 raise GitHubError(f"Failed to update repository: {str(e)}") from e
 
         try:
             # Clone repository
-            logger.info(f"Cloning repository {repo_url} to {repo_path}")
+            logger.info("Cloning repository %s to %s", repo_url, repo_path)
 
             await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -178,7 +178,7 @@ class GitHubDevinTool:
                     f"Repository too large: {repo_size_mb:.1f}MB (max {self.MAX_REPO_SIZE_MB}MB)"
                 )
 
-            logger.info(f"Successfully cloned {repo_name} ({repo_size_mb:.1f}MB)")
+            logger.info("Successfully cloned %s (%sMB)", repo_name, repo_size_mb:.1f)
 
             return {
                 "repo_name": repo_name,
@@ -189,7 +189,7 @@ class GitHubDevinTool:
             }
 
         except Exception as e:
-            logger.error(f"Failed to clone repository: {e}")
+            logger.error("Failed to clone repository: %s", e)
             raise GitHubError(f"Failed to clone repository: {str(e)}") from e
 
     async def index_repository(
@@ -240,7 +240,7 @@ class GitHubDevinTool:
                 "chunks_created": 0,
             }
 
-        logger.info(f"Indexing {len(code_files)} files from {repo_name}")
+        logger.info("Indexing %s files from %s", len(code_files), repo_name)
 
         # Create RAG item for repository
         rag_item = RagItem(
@@ -295,7 +295,7 @@ class GitHubDevinTool:
                     chunk_index += 1
 
             except Exception as e:
-                logger.warning(f"Failed to process file {file_path}: {e}")
+                logger.warning("Failed to process file %s: %s", file_path, e)
                 continue
 
         if not all_chunks:
@@ -308,7 +308,7 @@ class GitHubDevinTool:
             }
 
         # Generate embeddings in batch
-        logger.info(f"Generating embeddings for {len(all_chunks)} chunks")
+        logger.info("Generating embeddings for %s chunks", len(all_chunks))
         chunk_texts = [c["text"] for c in all_chunks]
         embeddings = await embed_texts(chunk_texts, batch_size=32)
 
@@ -332,7 +332,7 @@ class GitHubDevinTool:
         rag_item.status = "indexed"
         await self.db.flush()
 
-        logger.info(f"Indexed {repo_name}: {len(code_files)} files, {len(chunk_records)} chunks")
+        logger.info("Indexed %s: %s files, %s chunks", repo_name, len(code_files), len(chunk_records))
 
         return {
             "repo_name": repo_name,
@@ -474,7 +474,7 @@ class GitHubDevinTool:
             # Commit
             commit = repo.index.commit(message)
 
-            logger.info(f"Created commit {commit.hexsha[:8]} in {repo_name}")
+            logger.info("Created commit %s in %s", commit.hexsha[:8], repo_name)
 
             return {
                 "commit_sha": commit.hexsha,
@@ -484,7 +484,7 @@ class GitHubDevinTool:
             }
 
         except Exception as e:
-            logger.error(f"Failed to create commit: {e}")
+            logger.error("Failed to create commit: %s", e)
             raise GitHubError(f"Failed to create commit: {str(e)}") from e
 
     async def create_pull_request(
@@ -520,7 +520,7 @@ class GitHubDevinTool:
                 base=base_branch,
             )
 
-            logger.info(f"Created PR #{pr.number} in {repo_full_name}")
+            logger.info("Created PR #%s in %s", pr.number, repo_full_name)
 
             return {
                 "pr_number": pr.number,
@@ -530,7 +530,7 @@ class GitHubDevinTool:
             }
 
         except Exception as e:
-            logger.error(f"Failed to create PR: {e}")
+            logger.error("Failed to create PR: %s", e)
             raise GitHubError(f"Failed to create pull request: {str(e)}") from e
 
     def _get_directory_size(self, path: str) -> int:

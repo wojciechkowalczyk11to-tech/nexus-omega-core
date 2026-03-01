@@ -2,11 +2,23 @@
 Backend API client for Telegram bot.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import httpx
 
 from telegram_bot.config import settings
+
+_instance: BackendClient | None = None
+
+
+def get_backend_client() -> BackendClient:
+    """Get or create singleton BackendClient instance with connection pooling."""
+    global _instance
+    if _instance is None:
+        _instance = BackendClient()
+    return _instance
 
 
 class BackendClient:

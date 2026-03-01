@@ -111,12 +111,12 @@ class RAGTool:
             await self.db.flush()
             await self.db.refresh(rag_item)
 
-            logger.info(f"Uploaded RAG document: {filename} ({len(chunks)} chunks)")
+            logger.info("Uploaded RAG document: %s (%s chunks)", filename, len(chunks))
 
             return rag_item
 
         except Exception as e:
-            logger.error(f"RAG upload error: {e}", exc_info=True)
+            logger.error("RAG upload error: %s", e, exc_info=True)
             # Clean up file if exists
             if os.path.exists(stored_path):
                 os.remove(stored_path)
@@ -254,7 +254,7 @@ class RAGTool:
                     {"file_ext": file_ext},
                 ) from e
             except Exception as e:
-                logger.error(f"PDF extraction error: {e}", exc_info=True)
+                logger.error("PDF extraction error: %s", e, exc_info=True)
                 raise RAGError(
                     f"Błąd ekstrakcji PDF: {str(e)}",
                     {"file_path": file_path},
@@ -277,7 +277,7 @@ class RAGTool:
                     {"file_ext": file_ext},
                 ) from e
             except Exception as e:
-                logger.error(f"DOCX extraction error: {e}", exc_info=True)
+                logger.error("DOCX extraction error: %s", e, exc_info=True)
                 raise RAGError(
                     f"Błąd ekstrakcji DOCX: {str(e)}",
                     {"file_path": file_path},

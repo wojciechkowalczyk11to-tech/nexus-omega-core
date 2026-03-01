@@ -82,9 +82,12 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.Document.ALL, document_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message_streaming))
 
-    # Start polling
+    # Start polling with graceful shutdown support for Cloud Run (SIGTERM)
     logger.info("Bot started successfully. Polling for updates...")
-    application.run_polling(allowed_updates=["message", "callback_query"])
+    application.run_polling(
+        allowed_updates=["message", "callback_query"],
+        stop_signals=(signal.SIGINT, signal.SIGTERM),
+    )
 
 
 if __name__ == "__main__":

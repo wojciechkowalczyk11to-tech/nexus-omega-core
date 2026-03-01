@@ -5,7 +5,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from telegram_bot.services.backend_client import BackendClient
+from telegram_bot.services.backend_client import get_backend_client
 from telegram_bot.services.user_cache import UserCache
 
 
@@ -29,40 +29,36 @@ async def unlock_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     unlock_code = context.args[0]
 
-    backend = BackendClient()
-    cache = UserCache()
+    backend = get_backend_client()
 
-    try:
-        # Unlock via backend
-        response = await backend.unlock_demo(user.id, unlock_code)
+    async with UserCache() as cache:
+        try:
+            # Unlock via backend
+            response = await backend.unlock_demo(user.id, unlock_code)
 
-        # Invalidate cache
-        await cache.set_user_data(user.id, response, ttl=3600)
+            # Invalidate cache
+            await cache.set_user_data(user.id, response, ttl=3600)
 
-        await update.message.reply_text(
-            f"✅ **Dostęp DEMO odblokowany!**\n\n"
-            f"Twoja rola: **{response['role']}**\n"
-            f"Status: ✅ Autoryzowany\n\n"
-            f"Możesz teraz korzystać z bota. Wyślij wiadomość aby zacząć!",
-            parse_mode="Markdown",
-        )
-
-    except Exception as e:
-        error_message = str(e)
-
-        if "401" in error_message or "Nieprawidłowy" in error_message:
             await update.message.reply_text(
-                "❌ **Nieprawidłowy kod odblokowania.**\n\nSprawdź kod i spróbuj ponownie.",
+                f"✅ **Dostęp DEMO odblokowany!**\n\n"
+                f"Twoja rola: **{response['role']}**\n"
+                f"Status: ✅ Autoryzowany\n\n"
+                f"Możesz teraz korzystać z bota. Wyślij wiadomość aby zacząć!",
                 parse_mode="Markdown",
             )
-        elif "404" in error_message:
-            await update.message.reply_text(
-                "❌ **Użytkownik nie istnieje.**\n\nNajpierw użyj /start aby się zarejestrować.",
-                parse_mode="Markdown",
-            )
-        else:
-            await update.message.reply_text(f"❌ Błąd: {error_message}\n\nSpróbuj ponownie.")
 
-    finally:
-        await backend.close()
-        await cache.close()
+        except Exception as e:
+            error_message = str(e)
+
+            if "401" in error_message or "Nieprawidłowy" in error_message:
+                await update.message.reply_text(
+                    "❌ **Nieprawidłowy kod odblokowania.**\n\nSprawdź kod i spróbuj ponownie.",
+                    parse_mode="Markdown",
+                )
+            elif "404" in error_message:
+                await update.message.reply_text(
+                    "❌ **Użytkownik nie istnieje.**\n\nNajpierw użyj /start aby się zarejestrować.",
+                    parse_mode="Markdown",
+                )
+            else:
+                await update.message.reply_text(f"❌ Błąd: {error_message}\n\nSpróbuj ponownie.")

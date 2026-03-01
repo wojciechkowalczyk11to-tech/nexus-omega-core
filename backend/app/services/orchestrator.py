@@ -208,7 +208,13 @@ class Orchestrator:
         # =====================================================================
         # STEP 1: Policy check
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 1: Policy check for user {request.user.telegram_id}")
+        logger.info("[%s] Step 1: Policy check for user %s", trace_id, request.user.telegram_id)
+
+        # Downgrade expired subscriptions before policy check
+        request.user = await self.policy_engine.check_and_downgrade_expired_subscription(
+            request.user, self.db
+        )
+
         policy_result = await self.policy_engine.check_access(
             user=request.user,
             action="chat",
@@ -222,7 +228,7 @@ class Orchestrator:
         # =====================================================================
         # STEP 2: Session management
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 2: Get or create session")
+        logger.info("[%s] Step 2: Get or create session", trace_id)
         session = await self.memory_manager.get_or_create_session(
             user_id=request.user.telegram_id,
             mode=request.mode_override or request.user.default_mode,
@@ -231,7 +237,7 @@ class Orchestrator:
         # =====================================================================
         # STEP 3: Classify difficulty & select profile
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 3: Classify difficulty & select profile")
+        logger.info("[%s] Step 3: Classify difficulty & select profile", trace_id)
         difficulty = self.model_router.classify_difficulty(request.query)
         profile = self.model_router.select_profile(
             difficulty=difficulty,
@@ -263,7 +269,7 @@ class Orchestrator:
         # =====================================================================
         # STEP 4: Build initial context with token budgeting
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 4: Build context with token budget")
+        logger.info("[%s] Step 4: Build context with token budget", trace_id)
 
         # Determine provider and model for budget calculation
         # If provider_override is set, force that provider as the sole chain entry
@@ -300,14 +306,14 @@ class Orchestrator:
         # =====================================================================
         # STEP 5: ReAct Loop
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 5: Starting ReAct loop")
+        logger.info("[%s] Step 5: Starting ReAct loop", trace_id)
 
         response_content = ""
         provider_used = ""
         model_used = ""
 
         for iteration in range(1, MAX_REACT_ITERATIONS + 1):
-            logger.info(f"[{trace_id}] ReAct iteration {iteration}/{MAX_REACT_ITERATIONS}")
+            logger.info("[%s] ReAct iteration %s/%s", trace_id, iteration, MAX_REACT_ITERATIONS)
 
             step_start = time.time()
 
@@ -321,7 +327,7 @@ class Orchestrator:
                 )
             except AllProvidersFailedError:
                 # If all providers fail, try without tools as last resort
-                logger.warning(f"[{trace_id}] All providers failed with tools, trying without")
+                logger.warning("[%s] All providers failed with tools, trying without", trace_id)
                 try:
                     llm_response, p_used, fb_used = await ProviderFactory.generate_with_fallback(
                         provider_chain=provider_chain,
@@ -356,7 +362,7 @@ class Orchestrator:
                         timestamp_ms=int((time.time() - step_start) * 1000),
                     )
                 )
-                logger.info(f"[{trace_id}] LLM responded directly (no tool calls)")
+                logger.info("[%s] LLM responded directly (no tool calls)", trace_id)
                 break
 
             # --- Process tool calls ---
@@ -443,7 +449,7 @@ class Orchestrator:
             # (context may have grown significantly)
             current_tokens = TokenCounter.count_messages(context_messages)
             if current_tokens > budget_manager.effective_budget:
-                logger.info(f"[{trace_id}] Re-applying token budget after tool results")
+                logger.info("[%s] Re-applying token budget after tool results", trace_id)
                 # Rebuild prioritized messages from current context
                 reprioritized = []
                 for i, msg in enumerate(context_messages):
@@ -477,7 +483,7 @@ class Orchestrator:
 
         else:
             # Max iterations reached without final response
-            logger.warning(f"[{trace_id}] Max ReAct iterations reached ({MAX_REACT_ITERATIONS})")
+            logger.warning("[%s] Max ReAct iterations reached (%s)", trace_id, MAX_REACT_ITERATIONS)
             if not response_content:
                 # Force a final response
                 context_messages.append(
@@ -512,7 +518,7 @@ class Orchestrator:
         # =====================================================================
         # STEP 6: Persist messages and usage
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 6: Persist messages and usage")
+        logger.info("[%s] Step 6: Persist messages and usage", trace_id)
 
         # Persist user message
         await self.memory_manager.persist_message(
@@ -569,7 +575,7 @@ class Orchestrator:
         # =====================================================================
         # STEP 7: Maybe create snapshot
         # =====================================================================
-        logger.info(f"[{trace_id}] Step 7: Maybe create snapshot")
+        logger.info("[%s] Step 7: Maybe create snapshot", trace_id)
         await self.memory_manager.maybe_create_snapshot(session.id)
 
         # Commit all changes
@@ -733,11 +739,11 @@ class Orchestrator:
                 return response, prov_name, fallback_used
 
             except ProviderError as e:
-                logger.warning(f"Provider {prov_name} failed: {e.message}")
+                logger.warning("Provider %s failed: %s", prov_name, e.message)
                 last_error = e
                 continue
             except Exception as e:
-                logger.warning(f"Provider {prov_name} unexpected error: {e}")
+                logger.warning("Provider %s unexpected error: %s", prov_name, e)
                 last_error = ProviderError(str(e), {"provider": prov_name})
                 continue
 
@@ -857,7 +863,7 @@ class Orchestrator:
             )
 
         except Exception as e:
-            logger.warning(f"OpenAI-style tool call failed, falling back to standard: {e}")
+            logger.warning("OpenAI-style tool call failed, falling back to standard: %s", e)
             return await provider.generate(
                 messages=messages,
                 model=model,
@@ -946,7 +952,7 @@ class Orchestrator:
             )
 
         except Exception as e:
-            logger.warning(f"Claude tool call failed, falling back to standard: {e}")
+            logger.warning("Claude tool call failed, falling back to standard: %s", e)
             return await provider.generate(
                 messages=messages,
                 model=model,
@@ -1066,7 +1072,7 @@ class Orchestrator:
             )
 
         except Exception as e:
-            logger.warning(f"Gemini tool call failed, falling back to standard: {e}")
+            logger.warning("Gemini tool call failed, falling back to standard: %s", e)
             return await provider.generate(
                 messages=messages,
                 model=model,

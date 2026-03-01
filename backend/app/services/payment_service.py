@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import PaymentError
 from app.core.logging_config import get_logger
+from app.core.pricing import PRODUCTS
 from app.db.models.payment import Payment
 from app.db.models.user import User
 
@@ -18,34 +19,6 @@ logger = get_logger(__name__)
 
 class PaymentService:
     """Service for handling Telegram Stars payments."""
-
-    # Pricing tiers (in Telegram Stars)
-    PRICING = {
-        "full_access_monthly": {
-            "stars": 500,
-            "credits": 1000,
-            "duration_days": 30,
-            "description": "FULL_ACCESS - 30 dni",
-        },
-        "credits_100": {
-            "stars": 50,
-            "credits": 100,
-            "duration_days": 0,
-            "description": "100 kredytów",
-        },
-        "credits_500": {
-            "stars": 200,
-            "credits": 500,
-            "duration_days": 0,
-            "description": "500 kredytów",
-        },
-        "credits_1000": {
-            "stars": 350,
-            "credits": 1000,
-            "duration_days": 0,
-            "description": "1000 kredytów",
-        },
-    }
 
     def __init__(self, db: AsyncSession) -> None:
         """
@@ -79,13 +52,13 @@ class PaymentService:
             PaymentError: If product not found or payment creation fails
         """
         # Validate product
-        if product_id not in self.PRICING:
+        if product_id not in PRODUCTS:
             raise PaymentError(
                 f"Nieznany produkt: {product_id}",
                 {"product_id": product_id},
             )
 
-        product = self.PRICING[product_id]
+        product = PRODUCTS[product_id]
 
         # Get user
         result = await self.db.execute(select(User).where(User.telegram_id == user_id))
@@ -103,7 +76,6 @@ class PaymentService:
             product_id=product_id,
             plan=product_id,  # Use product_id as plan name
             amount_stars=product["stars"],
-            stars_amount=product["stars"],  # Duplicate for compatibility
             credits_granted=product["credits"],
             telegram_payment_charge_id=telegram_payment_charge_id,
             provider_payment_charge_id=provider_payment_charge_id,
@@ -139,7 +111,7 @@ class PaymentService:
         user.credits_balance += product["credits"]
 
         # Upgrade role if FULL_ACCESS purchase
-        duration_days = product.get("duration_days", 0)
+        duration_days = product.get("days", 0)
         if duration_days > 0:
             user.role = "FULL_ACCESS"
             user.authorized = True
@@ -200,4 +172,4 @@ class PaymentService:
         Returns:
             Pricing dict
         """
-        return self.PRICING
+        return PRODUCTS

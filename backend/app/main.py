@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+        logger.error("Failed to initialize database: %s", e)
         raise
 
     # Initialize Redis
@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await get_redis_pool()
         logger.info("Redis connection pool created successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize Redis: {e}")
+        logger.error("Failed to initialize Redis: %s", e)
         raise
 
     logger.info("NexusOmegaCore backend started successfully")
@@ -58,13 +58,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await close_redis_pool()
         logger.info("Redis connection pool closed")
     except Exception as e:
-        logger.error(f"Error closing Redis pool: {e}")
+        logger.error("Error closing Redis pool: %s", e)
 
     try:
         await close_db()
         logger.info("Database connections closed")
     except Exception as e:
-        logger.error(f"Error closing database: {e}")
+        logger.error("Error closing database: %s", e)
 
     logger.info("NexusOmegaCore backend shutdown complete")
 
@@ -84,14 +84,12 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
-    cors_origins = (
-        settings.cors_origins
-        if hasattr(settings, "cors_origins") and settings.cors_origins
-        else ["*"]
-    )
+    origins = settings.cors_allowed_origins
+    if not origins and settings.environment == "development":
+        origins = ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_origins,
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

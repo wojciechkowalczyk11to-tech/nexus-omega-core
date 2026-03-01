@@ -44,9 +44,9 @@ class EmbeddingService:
             Loaded SentenceTransformer model
         """
         if cls._model is None:
-            logger.info(f"Loading embedding model: {cls._model_name}")
+            logger.info("Loading embedding model: %s", cls._model_name)
             cls._model = SentenceTransformer(cls._model_name)
-            logger.info(f"Embedding model loaded successfully (dims={cls._dimensions})")
+            logger.info("Embedding model loaded successfully (dims=%s)", cls._dimensions)
         return cls._model
 
     @classmethod
