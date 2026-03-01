@@ -332,7 +332,9 @@ class GitHubDevinTool:
         rag_item.status = "indexed"
         await self.db.flush()
 
-        logger.info("Indexed %s: %s files, %s chunks", repo_name, len(code_files), len(chunk_records))
+        logger.info(
+            "Indexed %s: %s files, %s chunks", repo_name, len(code_files), len(chunk_records)
+        )
 
         return {
             "repo_name": repo_name,
