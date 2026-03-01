@@ -17,7 +17,7 @@ import time
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from app.core.exceptions import ToolExecutionError
@@ -31,7 +31,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class ParameterType(str, Enum):
+class ParameterType(StrEnum):
     """JSON Schema types for tool parameters."""
 
     STRING = "string"

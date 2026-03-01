@@ -26,7 +26,7 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,7 +59,7 @@ MAX_SELF_CORRECTIONS = 2  # Maximum self-correction attempts per iteration
 TOOL_CALL_FINISH = "tool_calls"  # finish_reason indicating tool call
 
 
-class AgentAction(str, Enum):
+class AgentAction(StrEnum):
     """Possible actions in the ReAct loop."""
 
     THINK = "think"
