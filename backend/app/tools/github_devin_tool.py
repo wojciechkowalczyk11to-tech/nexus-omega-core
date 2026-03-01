@@ -178,7 +178,7 @@ class GitHubDevinTool:
                     f"Repository too large: {repo_size_mb:.1f}MB (max {self.MAX_REPO_SIZE_MB}MB)"
                 )
 
-            logger.info("Successfully cloned %s (%sMB)", repo_name, repo_size_mb:.1f)
+            logger.info("Successfully cloned %s (%.1fMB)", repo_name, repo_size_mb)
 
             return {
                 "repo_name": repo_name,
