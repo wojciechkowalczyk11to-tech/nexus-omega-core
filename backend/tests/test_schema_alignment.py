@@ -171,7 +171,6 @@ EXPECTED_TABLES: dict[str, list[str]] = {
         "product_id",
         "plan",
         "amount_stars",
-        "stars_amount",
         "credits_granted",
         "currency",
         "provider_payment_charge_id",
@@ -266,10 +265,9 @@ async def test_expected_columns_exist(schema_engine):
                 ]
             )
             for col in expected_cols:
-                assert col in columns, (
-                    f"Column '{col}' missing from table '{table_name}'. "
-                    f"Existing columns: {columns}"
-                )
+                assert (
+                    col in columns
+                ), f"Column '{col}' missing from table '{table_name}'. Existing columns: {columns}"
 
 
 @pytest.mark.asyncio

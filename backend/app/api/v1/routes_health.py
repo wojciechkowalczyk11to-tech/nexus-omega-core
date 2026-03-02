@@ -42,7 +42,7 @@ async def health_check(
         result.scalar()
         health_status["database"] = "healthy"
     except Exception as e:
-        logger.error(f"Database health check failed: {e}")
+        logger.error("Database health check failed: %s", e)
         health_status["database"] = "unhealthy"
         health_status["status"] = "unhealthy"
 
@@ -51,7 +51,7 @@ async def health_check(
         await redis.ping()
         health_status["redis"] = "healthy"
     except Exception as e:
-        logger.error(f"Redis health check failed: {e}")
+        logger.error("Redis health check failed: %s", e)
         health_status["redis"] = "unhealthy"
         health_status["status"] = "unhealthy"
 

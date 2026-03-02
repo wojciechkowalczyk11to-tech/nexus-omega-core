@@ -94,9 +94,11 @@ class Settings(BaseSettings):
     log_json: bool = Field(default=True, description="Use JSON logging format")
 
     # === CORS ===
-    cors_origins: list[str] = Field(
-        default_factory=lambda: ["*"], description="Allowed CORS origins"
+    cors_allowed_origins: list[str] = Field(
+        default_factory=list,
+        description="Comma-separated list of allowed CORS origins",
     )
+    environment: str = Field(default="development", description="Runtime environment")
 
     # === Limits ===
     demo_grok_daily: int = Field(default=5, description="Daily Grok calls for DEMO users")
@@ -137,19 +139,6 @@ class Settings(BaseSettings):
             except (json.JSONDecodeError, ValueError):
                 return []
         return v if isinstance(v, list) else []
-
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v: Any) -> list[str]:
-        if isinstance(v, str):
-            if not v or v == "[]":
-                return ["*"]
-            try:
-                parsed = json.loads(v)
-                return [str(origin) for origin in parsed]
-            except json.JSONDecodeError:
-                return [o.strip() for o in v.split(",") if o.strip()]
-        return v if isinstance(v, list) else ["*"]
 
     def get_provider_policy(self) -> dict[str, Any]:
         """Parse provider policy JSON."""

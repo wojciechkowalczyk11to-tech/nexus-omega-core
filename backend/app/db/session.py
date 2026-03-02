@@ -76,7 +76,7 @@ async def init_db() -> None:
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection established successfully")
     except Exception as e:
-        logger.error(f"Failed to connect to database: {e}")
+        logger.error("Failed to connect to database: %s", e)
         raise
 
 

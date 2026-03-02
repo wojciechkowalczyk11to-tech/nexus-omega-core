@@ -17,14 +17,14 @@ Modele w kolejności eskalacji:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-class CostPreference(str, Enum):
+class CostPreference(StrEnum):
     """User's cost preference."""
 
     LOW = "low"  # Minimize costs, accept lower quality
@@ -32,7 +32,7 @@ class CostPreference(str, Enum):
     QUALITY = "quality"  # Prioritize quality over cost
 
 
-class ModelTier(str, Enum):
+class ModelTier(StrEnum):
     """Model cost/capability tier."""
 
     ULTRA_CHEAP = "ultra_cheap"  # ~$0.10 per 1M tokens
@@ -143,7 +143,7 @@ class SLMRouter:
             ),
             ModelConfig(
                 provider="claude",
-                model="claude-opus-4-20250918",
+                model="claude-opus-4-20250514",
                 tier=ModelTier.PREMIUM,
                 cost_per_1m_input=15.0,
                 cost_per_1m_output=75.0,
@@ -190,7 +190,7 @@ class SLMRouter:
 
         if not filtered_models:
             # Fallback to next tier if no models match
-            logger.warning(f"No models found in tier {target_tier}, escalating")
+            logger.warning("No models found in tier %s, escalating", target_tier)
             return cls._escalate_tier(target_tier, requires_function_calling, min_context_window)
 
         # Select fastest model from filtered candidates
@@ -283,7 +283,9 @@ class SLMRouter:
 
             if filtered_models:
                 selected = max(filtered_models, key=lambda m: m.speed_score)
-                logger.info(f"Escalated to tier {next_tier}: {selected.provider}/{selected.model}")
+                logger.info(
+                    "Escalated to tier %s: %s/%s", next_tier, selected.provider, selected.model
+                )
                 return selected
 
         # Fallback to any model if nothing matches

@@ -175,9 +175,9 @@ Zasady:
                             source="vertex_search",
                         )
                     )
-                    logger.info(f"Added {len(vertex_results)} Vertex results to context")
+                    logger.info("Added %s Vertex results to context", len(vertex_results))
             except Exception as e:
-                logger.warning(f"Vertex search failed: {e}")
+                logger.warning("Vertex search failed: %s", e)
 
         # 4. RAG documents
         if use_rag:
@@ -199,9 +199,9 @@ Zasady:
                             source="rag_search",
                         )
                     )
-                    logger.info(f"Added {len(rag_results)} RAG results to context")
+                    logger.info("Added %s RAG results to context", len(rag_results))
             except Exception as e:
-                logger.warning(f"RAG search failed: {e}")
+                logger.warning("RAG search failed: %s", e)
 
         # 5. Web search (if enabled)
         if use_web and self.web_tool.is_available():
@@ -223,9 +223,9 @@ Zasady:
                             source="web_search",
                         )
                     )
-                    logger.info(f"Added {len(web_results)} web results to context")
+                    logger.info("Added %s web results to context", len(web_results))
             except Exception as e:
-                logger.warning(f"Web search failed: {e}")
+                logger.warning("Web search failed: %s", e)
 
         # 6. Session history (snapshot + recent messages)
         history_messages = await self.memory_manager.get_context_messages(session_id)

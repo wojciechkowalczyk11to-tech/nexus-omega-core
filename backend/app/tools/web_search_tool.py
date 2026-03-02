@@ -78,19 +78,19 @@ class WebSearchTool:
                     }
                 )
 
-            logger.info(f"Web search returned {len(results)} results for: {query[:50]}")
+            logger.info("Web search returned %s results for: %s", len(results), query[:50])
 
             return results
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"Web search HTTP error: {e.response.status_code}")
+            logger.error("Web search HTTP error: %s", e.response.status_code)
             raise ToolExecutionError(
                 "web_search",
                 f"Web search failed: HTTP {e.response.status_code}",
                 {"query": query},
             ) from e
         except Exception as e:
-            logger.error(f"Web search error: {e}", exc_info=True)
+            logger.error("Web search error: %s", e, exc_info=True)
             raise ToolExecutionError(
                 "web_search",
                 f"Web search failed: {str(e)}",

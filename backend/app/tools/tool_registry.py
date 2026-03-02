@@ -17,7 +17,7 @@ import time
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from app.core.exceptions import ToolExecutionError
@@ -31,7 +31,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-class ParameterType(str, Enum):
+class ParameterType(StrEnum):
     """JSON Schema types for tool parameters."""
 
     STRING = "string"
@@ -220,10 +220,10 @@ class ToolRegistry:
     def register(self, tool: ToolDefinition) -> None:
         """Register a tool in the registry."""
         if tool.name in self._tools:
-            logger.warning(f"Tool '{tool.name}' already registered — overwriting")
+            logger.warning("Tool '%s' already registered — overwriting", tool.name)
         self._tools[tool.name] = tool
         self._execution_stats[tool.name] = {"calls": 0, "errors": 0, "total_ms": 0}
-        logger.info(f"Registered tool: {tool.name} (category={tool.category})")
+        logger.info("Registered tool: %s (category=%s)", tool.name, tool.category)
 
     def unregister(self, name: str) -> bool:
         """Remove a tool from the registry."""
@@ -378,7 +378,7 @@ class ToolRegistry:
             except TimeoutError:
                 elapsed_ms = int((time.time() - start) * 1000)
                 last_error = f"Timeout ({tool.timeout_seconds}s) dla narzędzia '{tool_name}'"
-                logger.warning(f"Tool '{tool_name}' timed out (attempt {attempt})")
+                logger.warning("Tool '%s' timed out (attempt %s)", tool_name, attempt)
                 self._execution_stats[tool_name]["errors"] += 1
 
             except Exception as e:

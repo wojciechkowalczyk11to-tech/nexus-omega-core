@@ -71,7 +71,7 @@ async def chat(
     8. Persistence
     9. Snapshot creation
     """
-    logger.info(f"Chat request from user {current_user.telegram_id}: {request.query[:50]}...")
+    logger.info("Chat request from user %s: %s...", current_user.telegram_id, request.query[:50])
 
     orchestrator = Orchestrator(db)
 
@@ -119,19 +119,19 @@ async def chat(
         )
 
     except PolicyDeniedError as e:
-        logger.warning(f"Policy denied for user {current_user.telegram_id}: {e.message}")
+        logger.warning("Policy denied for user %s: %s", current_user.telegram_id, e.message)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.message,
         ) from e
     except AllProvidersFailedError as e:
-        logger.error(f"All providers failed for user {current_user.telegram_id}")
+        logger.error("All providers failed for user %s", current_user.telegram_id)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message,
         ) from e
     except Exception as e:
-        logger.error(f"Unexpected error in chat: {e}", exc_info=True)
+        logger.error("Unexpected error in chat: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Błąd przetwarzania zapytania: {str(e)}",

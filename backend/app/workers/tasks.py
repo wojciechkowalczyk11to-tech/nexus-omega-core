@@ -15,6 +15,40 @@ from app.workers.celery_app import celery_app
 logger = get_logger(__name__)
 
 
+@celery_app.task(name="downgrade_expired_subscriptions")
+def downgrade_expired_subscriptions() -> int:
+    """Batch downgrade all users with expired subscriptions."""
+    from datetime import datetime
+
+    from sqlalchemy import update
+
+    from app.db.models.user import User
+    from app.db.session import async_session_maker
+
+    async def _run() -> int:
+        async with async_session_maker() as db:
+            result = await db.execute(
+                update(User)
+                .where(
+                    User.role == "FULL_ACCESS",
+                    User.subscription_expires_at < datetime.now(UTC),
+                )
+                .values(role="DEMO", subscription_tier=None)
+                .returning(User.telegram_id)
+            )
+            downgraded = result.scalars().all()
+            await db.commit()
+            if downgraded:
+                logger.info(
+                    "Batch downgraded %d expired subscriptions: %s",
+                    len(downgraded),
+                    downgraded,
+                )
+            return len(downgraded)
+
+    return asyncio.run(_run())
+
+
 @celery_app.task(name="tasks.cleanup_old_sessions")
 def cleanup_old_sessions() -> dict[str, Any]:
     """
@@ -48,7 +82,7 @@ def cleanup_old_sessions() -> dict[str, Any]:
 
         deleted_count = asyncio.run(_cleanup())
 
-        logger.info(f"Cleaned up {deleted_count} old sessions")
+        logger.info("Cleaned up %s old sessions", deleted_count)
 
         return {
             "status": "success",
@@ -56,7 +90,7 @@ def cleanup_old_sessions() -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"cleanup_old_sessions error: {e}", exc_info=True)
+        logger.error("cleanup_old_sessions error: %s", e, exc_info=True)
         return {
             "status": "error",
             "error": str(e),
@@ -75,7 +109,7 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
     Returns:
         Task result dict with report data
     """
-    logger.info(f"Generating usage report for user {user_id}, period={period_days} days")
+    logger.info("Generating usage report for user %s, period=%s days", user_id, period_days)
 
     try:
         from datetime import datetime, timedelta
@@ -114,7 +148,7 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
 
         report = asyncio.run(_generate())
 
-        logger.info(f"Generated usage report for user {user_id}: {report}")
+        logger.info("Generated usage report for user %s: %s", user_id, report)
 
         return {
             "status": "success",
@@ -122,7 +156,7 @@ def generate_usage_report(user_id: int, period_days: int = 30) -> dict[str, Any]
         }
 
     except Exception as e:
-        logger.error(f"generate_usage_report error: {e}", exc_info=True)
+        logger.error("generate_usage_report error: %s", e, exc_info=True)
         return {
             "status": "error",
             "error": str(e),
@@ -144,7 +178,7 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
     Returns:
         Task result dict with status, repo_url, and files_indexed count
     """
-    logger.info(f"Syncing GitHub repo for user {user_id}: {repo_url}")
+    logger.info("Syncing GitHub repo for user %s: %s", user_id, repo_url)
 
     temp_repo_dir = ""
 
@@ -174,7 +208,7 @@ def sync_github_repo(user_id: int, repo_url: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"sync_github_repo error: {e}", exc_info=True)
+        logger.error("sync_github_repo error: %s", e, exc_info=True)
         return {
             "status": "error",
             "error": str(e),

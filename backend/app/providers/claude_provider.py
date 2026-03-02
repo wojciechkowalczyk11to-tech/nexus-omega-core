@@ -102,7 +102,7 @@ class ClaudeProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"Claude generation error: {e}", exc_info=True)
+            logger.error("Claude generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"Claude generation failed: {str(e)}",
                 {"provider": "claude", "model": model},

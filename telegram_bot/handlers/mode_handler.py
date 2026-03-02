@@ -15,9 +15,8 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Allows user to change AI mode (eco, smart, deep).
     """
     user = update.effective_user
-    cache = UserCache()
 
-    try:
+    async with UserCache() as cache:
         # Get current mode
         current_mode = await cache.get_user_mode(user.id) or "eco"
 
@@ -69,6 +68,3 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 """
 
             await update.message.reply_text(mode_info, parse_mode="Markdown")
-
-    finally:
-        await cache.close()

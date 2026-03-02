@@ -107,7 +107,7 @@ class GeminiProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"Gemini generation error: {e}", exc_info=True)
+            logger.error("Gemini generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"Gemini generation failed: {str(e)}",
                 {"provider": "gemini", "model": model},

@@ -89,7 +89,7 @@ class GrokProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"Grok generation error: {e}", exc_info=True)
+            logger.error("Grok generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"Grok generation failed: {str(e)}",
                 {"provider": "grok", "model": model},

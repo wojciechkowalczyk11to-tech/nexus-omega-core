@@ -150,7 +150,7 @@ class RAGToolV2:
             await self.db.refresh(rag_item)
 
             # Generate embeddings for all chunks in batch
-            logger.info(f"Generating embeddings for {len(chunks)} chunks...")
+            logger.info("Generating embeddings for %s chunks...", len(chunks))
             embeddings = await embed_texts(chunks, batch_size=32)
 
             # Create chunk records with embeddings
@@ -175,12 +175,12 @@ class RAGToolV2:
             rag_item.status = "indexed"
             await self.db.flush()
 
-            logger.info(f"Uploaded and indexed RAG document: {filename} ({len(chunks)} chunks)")
+            logger.info("Uploaded and indexed RAG document: %s (%s chunks)", filename, len(chunks))
 
             return rag_item
 
         except Exception as e:
-            logger.error(f"RAG upload error: {e}", exc_info=True)
+            logger.error("RAG upload error: %s", e, exc_info=True)
             # Clean up file if exists
             if os.path.exists(stored_path):
                 os.remove(stored_path)
@@ -341,7 +341,7 @@ class RAGToolV2:
         await self.db.delete(rag_item)
         await self.db.flush()
 
-        logger.info(f"Deleted RAG document: {rag_item.filename} (id={item_id})")
+        logger.info("Deleted RAG document: %s (id=%s)", rag_item.filename, item_id)
 
         return True
 
@@ -385,7 +385,7 @@ class RAGToolV2:
                     text_parts.append(page.extract_text())
                 return "\n\n".join(text_parts)
             except Exception as e:
-                logger.error(f"PDF extraction error: {e}")
+                logger.error("PDF extraction error: %s", e)
                 raise RAGError(f"Błąd ekstrakcji PDF: {str(e)}") from e
 
         elif file_ext == ".docx":
@@ -397,7 +397,7 @@ class RAGToolV2:
                 text_parts = [para.text for para in doc.paragraphs if para.text.strip()]
                 return "\n\n".join(text_parts)
             except Exception as e:
-                logger.error(f"DOCX extraction error: {e}")
+                logger.error("DOCX extraction error: %s", e)
                 raise RAGError(f"Błąd ekstrakcji DOCX: {str(e)}") from e
 
         else:

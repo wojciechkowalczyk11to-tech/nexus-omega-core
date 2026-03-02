@@ -86,7 +86,7 @@ class OpenAIProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"OpenAI generation error: {e}", exc_info=True)
+            logger.error("OpenAI generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"OpenAI generation failed: {str(e)}",
                 {"provider": "openai", "model": model},

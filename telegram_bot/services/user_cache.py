@@ -27,6 +27,13 @@ class UserCache:
         """Close Redis connection."""
         await self.redis.aclose()
 
+    async def __aenter__(self) -> "UserCache":
+        return self
+
+    async def __aexit__(self, exc_type: object, exc_val: object, exc_tb: object) -> bool:
+        await self.close()
+        return False
+
     async def get_user_token(self, telegram_id: int) -> str | None:
         """
         Get cached JWT token for user.

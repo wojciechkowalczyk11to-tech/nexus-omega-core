@@ -11,20 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin_user, get_current_user, get_db
 from app.core.logging_config import get_logger
+from app.core.pricing import PRODUCTS, get_subscription_products
 from app.db.models.payment import Payment
 from app.db.models.user import User
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/payments", tags=["payments"])
-
-
-# Subscription tier definitions
-SUBSCRIPTION_TIERS = {
-    "full_month": {"stars": 150, "days": 30, "role": "FULL_ACCESS"},
-    "full_week": {"stars": 50, "days": 7, "role": "FULL_ACCESS"},
-    "deep_day": {"stars": 25, "days": 1, "role": "FULL_ACCESS", "profile_unlock": "deep"},
-}
 
 
 class TelegramStarsVerifyRequest(BaseModel):
@@ -81,7 +74,7 @@ async def verify_telegram_stars_payment(
     current_user: User = Depends(get_current_user),
 ) -> TelegramStarsVerifyResponse:
     """Verify and process a Telegram Stars payment."""
-    tier_config = SUBSCRIPTION_TIERS.get(request.tier)
+    tier_config = PRODUCTS.get(request.tier)
     if not tier_config:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -103,6 +96,18 @@ async def verify_telegram_stars_payment(
             detail="User not found",
         )
 
+    # Check for duplicate payment
+    existing_payment = await db.execute(
+        select(Payment).where(
+            Payment.telegram_payment_charge_id == request.telegram_payment_charge_id
+        )
+    )
+    if existing_payment.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Payment already processed",
+        )
+
     # Calculate expiration
     now = datetime.now(UTC)
     expires_at = now + timedelta(days=tier_config["days"])
@@ -120,7 +125,6 @@ async def verify_telegram_stars_payment(
     payment = Payment(
         user_id=user.telegram_id,
         amount_stars=request.stars_paid,
-        stars_amount=request.stars_paid,
         tier=request.tier,
         product_id=f"subscription_{request.tier}",
         plan=request.tier,
@@ -191,7 +195,7 @@ async def cancel_subscription(
     user.subscription_expires_at = None
     await db.flush()
 
-    logger.info(f"Subscription cancelled: user={request.telegram_id}, reason={request.reason}")
+    logger.info("Subscription cancelled: user=%s, reason=%s", request.telegram_id, request.reason)
 
     return {
         "status": "cancelled",
@@ -222,7 +226,7 @@ async def get_revenue_analytics(
 
     # Subscriptions by tier
     tier_counts: dict[str, int] = {}
-    for tier_name in SUBSCRIPTION_TIERS:
+    for tier_name in get_subscription_products():
         tier_result = await db.execute(
             select(func.count(User.id)).where(
                 User.subscription_tier == tier_name,

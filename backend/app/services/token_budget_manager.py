@@ -55,7 +55,7 @@ class TokenCounter:
         except ImportError:
             logger.info("TokenCounter: tiktoken not available, using heuristic")
         except Exception as e:
-            logger.warning(f"TokenCounter: tiktoken load error: {e}, using heuristic")
+            logger.warning("TokenCounter: tiktoken load error: %s, using heuristic", e)
 
     @classmethod
     def count(cls, text: str) -> int:

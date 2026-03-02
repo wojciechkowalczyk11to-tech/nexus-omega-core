@@ -3,15 +3,18 @@ Policy engine for RBAC, provider access control, and usage limits.
 """
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import BudgetExceededError, PolicyDeniedError
+from app.core.logging_config import get_logger
 from app.db.models.tool_counter import ToolCounter
 from app.db.models.user import User
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -122,6 +125,25 @@ class PolicyEngine:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+    async def check_and_downgrade_expired_subscription(self, user: User, db: AsyncSession) -> User:
+        """
+        Check if user's subscription has expired and downgrade to DEMO if so.
+        Should be called at the start of every request pipeline.
+        """
+        if (
+            user.role == "FULL_ACCESS"
+            and user.subscription_expires_at is not None
+            and user.subscription_expires_at < datetime.now(UTC)
+        ):
+            user.role = "DEMO"
+            user.subscription_tier = None
+            await db.flush()
+            logger.info(
+                "Subscription expired for user %s, downgraded to DEMO",
+                user.telegram_id,
+            )
+        return user
+
     async def check_access(
         self,
         user: User,
@@ -152,14 +174,6 @@ class PolicyEngine:
                 "Musisz odblokować dostęp. Użyj /unlock <kod>",
                 {"role": role, "authorized": False},
             )
-
-        # Check subscription expiration
-        if role in ("FULL_ACCESS",) and user.subscription_expires_at:
-            from datetime import UTC, datetime
-
-            if user.subscription_expires_at < datetime.now(UTC):
-                # Subscription expired — degrade to DEMO
-                role = "DEMO"
 
         # Check command access
         if action in self.COMMAND_ACCESS.get(role, {}) and not self.COMMAND_ACCESS[role][action]:

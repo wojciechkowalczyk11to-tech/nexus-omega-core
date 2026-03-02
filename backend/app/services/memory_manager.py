@@ -274,11 +274,11 @@ Podsumowanie:"""
             )
 
             compressed_text = response.content.strip()
-            logger.info(f"Compressed {len(messages)} messages into {len(compressed_text)} chars")
+            logger.info("Compressed %s messages into %s chars", len(messages), len(compressed_text))
             return compressed_text
 
         except Exception as e:
-            logger.error(f"LLM compression failed: {e}, falling back to simple concatenation")
+            logger.error("LLM compression failed: %s, falling back to simple concatenation", e)
             # Fallback to simple concatenation
             snapshot_parts = []
             for msg in messages:

@@ -44,7 +44,7 @@ class VertexSearchTool:
             try:
                 self.client = discoveryengine.SearchServiceClient()
             except Exception as e:
-                logger.error(f"Failed to initialize Vertex AI Search client: {e}")
+                logger.error("Failed to initialize Vertex AI Search client: %s", e)
                 self.client = None
 
     def is_available(self) -> bool:
@@ -111,12 +111,12 @@ class VertexSearchTool:
                     }
                 )
 
-            logger.info(f"Vertex AI Search returned {len(results)} results for: {query[:50]}")
+            logger.info("Vertex AI Search returned %s results for: %s", len(results), query[:50])
 
             return results
 
         except Exception as e:
-            logger.error(f"Vertex AI Search error: {e}", exc_info=True)
+            logger.error("Vertex AI Search error: %s", e, exc_info=True)
             raise ToolExecutionError(
                 "vertex",
                 f"Vertex AI Search failed: {str(e)}",

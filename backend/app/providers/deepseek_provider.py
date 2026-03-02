@@ -88,7 +88,7 @@ class DeepSeekProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"DeepSeek generation error: {e}", exc_info=True)
+            logger.error("DeepSeek generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"DeepSeek generation failed: {str(e)}",
                 {"provider": "deepseek", "model": model},

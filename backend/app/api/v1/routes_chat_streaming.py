@@ -86,17 +86,17 @@ async def generate_stream_events(
         yield "data: [DONE]\n\n"
 
     except PolicyDeniedError as e:
-        logger.warning(f"Policy denied for user {current_user.telegram_id}: {e.message}")
+        logger.warning("Policy denied for user %s: %s", current_user.telegram_id, e.message)
         yield f"data: {json.dumps({'type': 'error', 'message': e.message, 'code': 403})}\n\n"
         yield "data: [DONE]\n\n"
 
     except AllProvidersFailedError as e:
-        logger.error(f"All providers failed for user {current_user.telegram_id}")
+        logger.error("All providers failed for user %s", current_user.telegram_id)
         yield f"data: {json.dumps({'type': 'error', 'message': e.message, 'code': 503})}\n\n"
         yield "data: [DONE]\n\n"
 
     except Exception as e:
-        logger.error(f"Unexpected error in streaming chat: {e}", exc_info=True)
+        logger.error("Unexpected error in streaming chat: %s", e, exc_info=True)
         yield f"data: {json.dumps({'type': 'error', 'message': f'Błąd przetwarzania zapytania: {str(e)}', 'code': 500})}\n\n"
         yield "data: [DONE]\n\n"
 

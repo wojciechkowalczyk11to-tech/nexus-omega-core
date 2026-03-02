@@ -88,7 +88,7 @@ class OpenRouterProvider(BaseProvider):
             )
 
         except Exception as e:
-            logger.error(f"OpenRouter generation error: {e}", exc_info=True)
+            logger.error("OpenRouter generation error: %s", e, exc_info=True)
             raise ProviderError(
                 f"OpenRouter generation failed: {str(e)}",
                 {"provider": "openrouter", "model": model},

@@ -37,9 +37,8 @@ async def provider_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         /provider auto     - return to automatic routing
     """
     user = update.effective_user
-    cache = UserCache()
 
-    try:
+    async with UserCache() as cache:
         current_provider = await cache.get_user_provider(user.id)
 
         if context.args and len(context.args) > 0:
@@ -90,6 +89,3 @@ async def provider_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             lines.append("`/provider auto` — powrót do automatycznego routingu")
 
             await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-
-    finally:
-        await cache.close()
